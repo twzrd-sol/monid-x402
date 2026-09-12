@@ -123,8 +123,12 @@
     <pre id="packet">{}</pre>
   </main>
   <script>
-    fetch("./data.json", { cache: "no-store" })
-      .then((r) => r.json())
+    fetch("./paid.json", { cache: "no-store" })
+      .then((r) => {
+        if (!r.ok) throw new Error("paid.json missing");
+        return r.json();
+      })
+      .catch(() => fetch("./data.json", { cache: "no-store" }).then((r) => r.json()))
       .then((d) => {
         document.getElementById("decision").textContent = d.decision || "unknown";
         document.getElementById("schema").textContent = d.schema || "";

@@ -11,6 +11,7 @@ import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
 import { startProxy } from "./proxy.js";
+import { scrapePayInput } from "./input.js";
 import { refuseReceipt } from "./receipt.js";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -27,7 +28,7 @@ function parseInput(): Record<string, unknown> {
   const raw = arg("--input");
   if (!raw) {
     const url = arg("--url");
-    return url ? { queryParams: { url } } : {};
+    return url ? scrapePayInput(url) : {};
   }
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
