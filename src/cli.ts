@@ -2,8 +2,10 @@
 import { writeFileSync } from "node:fs";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
+import { decidePayPath } from "./decision.js";
 import { inspectEndpoint } from "./inspect.js";
-import { PayGatedError, payRun } from "./pay.js";
+import { tryAppendLedger } from "./ledger.js";
+import { assertPayAuthorized, payRun } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
@@ -73,6 +75,11 @@ async function refuse() {
     throw new Error(`Expected refuse under cap ${maxAmountMicro}, got allow.`);
   }
   const receipt = refuseReceipt(target, verdict, MONID_X402_RUN_URL);
+  tryAppendLedger(process.env.MONID_LEDGER_DIR ?? "evidence/ledger", {
+    kind: "refuse",
+    httpStatus: 402,
+    receipt
+  });
   const out = arg("--out");
   if (out) writeFileSync(out, `${JSON.stringify(receipt, null, 2)}\n`);
   console.log(JSON.stringify(receipt, null, 2));
@@ -82,15 +89,8 @@ async function refuse() {
 }
 
 async function pay() {
-  if (!flag("--confirm-spend")) {
-    throw new PayGatedError(
-      "Pay is gated. Refuse is the default. Re-run with --confirm-spend and PRIVATE_KEY after a refuse receipt exists."
-    );
-  }
   const key = process.env.PRIVATE_KEY;
-  if (!key?.startsWith("0x")) {
-    throw new PayGatedError("PRIVATE_KEY is required for pay. Do not commit it.");
-  }
+  assertPayAuthorized({ confirmSpend: flag("--confirm-spend"), privateKey: key });
   const maxAmountMicro = BigInt(arg("--max-amount-micro", "10000")!);
   const result = await payRun({
     confirmSpend: true,
@@ -98,8 +98,42 @@ async function pay() {
     policy: defaultPolicy({ maxAmountMicro }),
     target: targetFromArgs()
   });
+  tryAppendLedger(process.env.MONID_LEDGER_DIR ?? "evidence/ledger", {
+    kind: result.kind === "paid" ? "paid" : "refuse",
+    httpStatus: result.kind === "paid" ? result.status : 402,
+    receipt: result.kind === "paid" ? result.body : result.receipt
+  });
   console.log(JSON.stringify(result, null, 2));
   if (result.kind === "refused") process.exitCode = 2;
+}
+
+async function decision() {
+  const target = targetFromArgs();
+  const probe = await probeRun402(target);
+  const verdict = decidePayPath({
+    inspectKeyPresent: Boolean(process.env.MONID_API_KEY),
+    confirmSpend: flag("--confirm-spend"),
+    privateKeyPresent: Boolean(process.env.PRIVATE_KEY?.startsWith("0x")),
+    proxyHasWallet: false,
+    defaultCap: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy({ maxAmountMicro: 1n })),
+    floor: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy())
+  });
+  const out = arg("--out");
+  const body = {
+    ...verdict,
+    resource: probe.paymentRequired.resource.url,
+    target: probe.target,
+    selected: probe.paymentRequired.accepts[0]
+      ? {
+          network: probe.paymentRequired.accepts[0].network,
+          amount: probe.paymentRequired.accepts[0].amount,
+          payTo: probe.paymentRequired.accepts[0].payTo
+        }
+      : null
+  };
+  if (out) writeFileSync(out, `${JSON.stringify(body, null, 2)}\n`);
+  console.log(JSON.stringify(body, null, 2));
+  if (!verdict.canPay) process.exitCode = 2;
 }
 
 async function catalog() {
@@ -139,9 +173,12 @@ async function main() {
   if (command === "probe") return probe();
   if (command === "refuse") return refuse();
   if (command === "pay") return pay();
+  if (command === "decision") return decision();
   if (command === "catalog") return catalog();
   if (command === "listen") return listen();
-  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen> [--provider context.dev] [--endpoint /web/scrape/markdown]");
+  console.error(
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|listen> [--provider context.dev] [--endpoint /web/scrape/markdown]"
+  );
   process.exitCode = 2;
 }
 

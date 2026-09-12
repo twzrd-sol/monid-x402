@@ -34,6 +34,7 @@ npm ci
 npm test
 npm run probe:live
 npm run refuse:live
+npm run decision:live
 npm run catalog:live
 npm run listen
 ```
@@ -45,6 +46,9 @@ npm run listen
 Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
 `@x402/fetch` + `ExactEvmScheme`. Policy still runs on the 402 *before*
 the signer is constructed, and again on `onBeforePaymentCreation`.
+`decision:live` probes the live 402 and prints a `monid-x402.pay-path.v1`
+verdict. It never constructs a signer.
+
 Do not run pay for this tree unless a refuse receipt already exists.
 Do not commit a key.
 

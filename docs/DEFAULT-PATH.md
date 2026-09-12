@@ -63,3 +63,6 @@ Independent nodes. The maker of a lane does not grade it.
    film process. Leave it alone.
 
 Pay stays gated. `PRIVATE_KEY` unset is a hold, not a skip of CATALOG/PROXY.
+`npm run decision:live` records that hold. First paid attempt still needs an
+operator `--confirm-spend` plus a dedicated EVM key. The 8788 listen has no
+wallet even when `X-TWZRD-Confirm-Spend` is set.
