@@ -65,7 +65,7 @@ Week-0 listen (loopback, no wallet):
 ```bash
 npm run listen
 # other agents:
-export MONID_API_BASE_URL=http://127.0.0.1:8787
+export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse

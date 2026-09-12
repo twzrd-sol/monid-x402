@@ -123,9 +123,9 @@ async function catalog() {
 }
 
 async function listen() {
-  const port = Number(arg("--port", process.env.PORT ?? "8787"));
+  const port = Number(arg("--port", process.env.PORT ?? "8788"));
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
-    throw new Error(`invalid listen port: ${arg("--port", process.env.PORT ?? "8787")}`);
+    throw new Error(`invalid listen port: ${arg("--port", process.env.PORT ?? "8788")}`);
   }
   const { port: bound } = await startProxy(port);
   const base = `http://127.0.0.1:${bound}`;

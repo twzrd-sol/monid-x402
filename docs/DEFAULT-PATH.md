@@ -58,6 +58,8 @@ Independent nodes. The maker of a lane does not grade it.
 2. Seed matrix + classifier (no wallet)
 3. Proxy red: `/v1/run` must not hit prepaid `api.monid.ai`
 4. Fan-out: harvest more seeds; write the proxy contract from live docs
-5. Listen on `127.0.0.1:8787` (`npm run listen`). Other agents set `MONID_API_BASE_URL`.
+5. Listen on `127.0.0.1:8788` (`npm run listen`). Other agents set
+   `MONID_API_BASE_URL=http://127.0.0.1:8788`. `8787` is a stale tool-audit
+   film process. Leave it alone.
 
 Pay stays gated. `PRIVATE_KEY` unset is a hold, not a skip of CATALOG/PROXY.
