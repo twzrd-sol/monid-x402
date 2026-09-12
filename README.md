@@ -43,6 +43,7 @@ npm run doctor
 npm run index
 npm run verify
 npm run retrieve:live
+npm run quote:live
 ```
 
 `refuse:live` hits the live 402, applies `--max-amount-micro 1`, and writes a
@@ -120,6 +121,15 @@ domain (`context.dev /brand/retrieve`) then read the homepage
 npm run brief
 npm run brief:pay   # --confirm-spend; needs PRIVATE_KEY or --key-file
 ```
+
+SKU: `vendor-prescreen` is the tool-audit job on this rail (scrape +
+headers + cookies). `npm run quote:live` writes the buyer envelope
+(`twzrd.product_run.v1` + quote + incomplete deliver). Operate:
+`http://127.0.0.1:8788/prescreen`. Buyer API: `POST /v1/product/run`.
+Storefront: `pages/prescreen.html`. Pay is
+`node dist/cli.js product --confirm-spend --url https://…` only after a
+refuse packet exists. Deliver never upgrades missing evidence to
+approval. USDC settles to Monid. TWZRD take-rate is 0.
 
 Front: `http://127.0.0.1:8790/brief.html`. Production pages deploy from `pages/`.
 

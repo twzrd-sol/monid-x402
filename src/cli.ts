@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
 import { companyBriefPlan } from "./brief.js";
+import { runVendorPrescreen } from "./product.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
 import { decidePayPath, type WashCoverage } from "./decision.js";
@@ -288,6 +289,37 @@ async function listen() {
   console.error("GET /v1/runs/:id → SIWX retrieve refuse. GET /v1/runs list is 501.");
 }
 
+function writeProduct(run: Awaited<ReturnType<typeof runVendorPrescreen>>): void {
+  writeFileSync("evidence/product-quote.json", `${JSON.stringify(run.quote, null, 2)}\n`);
+  writeFileSync("pages/prescreen-quote.json", `${JSON.stringify(run.quote, null, 2)}\n`);
+  writeFileSync("evidence/product-run.json", `${JSON.stringify(run, null, 2)}\n`);
+  writeFileSync("pages/prescreen-run.json", `${JSON.stringify(run, null, 2)}\n`);
+  const out = arg("--out");
+  if (out) writeFileSync(out, `${JSON.stringify(run, null, 2)}\n`);
+  else {
+    appendLedger("evidence/ledger", {
+      kind: "run",
+      httpStatus: run.decision === "paid" || run.decision === "quoted" ? 200 : 403,
+      receipt: run
+    });
+  }
+}
+
+async function product() {
+  const url = arg("--url", "https://monid.ai")!;
+  const confirmSpend = flag("--confirm-spend");
+  const run = await runVendorPrescreen(url, {
+    confirmSpend,
+    privateKey: confirmSpend ? optionalPrivateKey() : undefined,
+    requireRefuseDir: confirmSpend ? "evidence/ledger" : undefined,
+    maxAmountMicro: confirmSpend ? BigInt(arg("--max-amount-micro", "178200")!) : undefined
+  });
+  writeProduct(run);
+  console.log(JSON.stringify(run, null, 2));
+  if (run.decision !== "quoted" && run.decision !== "paid") process.exitCode = 2;
+  if (!confirmSpend && run.quote.nextGate !== "confirm_spend") process.exitCode = 2;
+}
+
 async function front() {
   const port = Number(arg("--port", "8790"));
   const { port: bound } = await startFront(port, pagesRoot());
@@ -382,12 +414,13 @@ async function main() {
   if (command === "listen") return listen();
   if (command === "front") return front();
   if (command === "brief") return brief();
+  if (command === "product") return product();
   if (command === "index") return indexLedger();
   if (command === "retrieve") return retrieve();
   if (command === "verify") return verify();
   if (command === "doctor") return doctorCmd();
   console.error(
-    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|listen|front|brief|index|verify|doctor>"
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|listen|front|brief|product|index|verify|doctor>"
   );
   process.exitCode = 2;
 }

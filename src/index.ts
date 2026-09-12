@@ -16,6 +16,7 @@ export * from "./ledger.js";
 export * from "./verify.js";
 export * from "./doctor.js";
 export * from "./brief.js";
+export * from "./product.js";
 export * from "./decision.js";
 export * from "./listen-decision.js";
 export * from "./input.js";

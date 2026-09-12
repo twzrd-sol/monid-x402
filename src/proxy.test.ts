@@ -114,6 +114,9 @@ test("startProxy binds loopback; unknown route is 404", async () => {
     assert.equal(desk.status, 200);
     const html = await desk.text();
     assert.match(html, /monid-x402 desk/);
+    const prescreen = await fetch(`http://127.0.0.1:${port}/prescreen`);
+    assert.equal(prescreen.status, 200);
+    assert.match(await prescreen.text(), /vendor-prescreen/);
     assert.ok(port > 0);
   } finally {
     await new Promise<void>((resolve, reject) => {
@@ -135,7 +138,8 @@ test("GET /health is 200 and does not fetch", async () => {
     listen: "8788",
     prepaid_run: false,
     twzrd_gate: "0.9.5",
-    desk: true
+    desk: true,
+    sku: "vendor-prescreen"
   });
   assert.equal(fetched, false);
 });
@@ -233,4 +237,107 @@ test("run decisions append ledger files and never overwrite", async () => {
     return row.kind;
   });
   assert.deepEqual(kinds.sort(), ["refuse", "spend_gated"]);
+});
+
+test("GET /v1/product lists the SKU catalog without fetching", async () => {
+  let fetched = false;
+  const result = await handleProxyRequest("GET", "/v1/product", {}, {}, async () => {
+    fetched = true;
+    return new Response("nope");
+  });
+  assert.equal(result.status, 200);
+  const body = result.body as {
+    schema?: string;
+    canPay?: boolean;
+    skus?: Array<{ sku?: string; settlement?: { takeRate?: number } }>;
+  };
+  assert.equal(body.schema, "twzrd.product_catalog.v1");
+  assert.equal(body.canPay, false);
+  assert.equal(body.skus?.[0]?.sku, "vendor-prescreen");
+  assert.equal(body.skus?.[0]?.settlement?.takeRate, 0);
+  assert.equal(fetched, false);
+});
+
+test("POST /v1/product/quote quotes vendor-prescreen and does not spend", async () => {
+  const result = await handleProxyRequest(
+    "POST",
+    "/v1/product/quote",
+    { url: "https://monid.ai" },
+    {},
+    fixture402Fetch()
+  );
+  assert.equal(result.status, 200);
+  const body = result.body as {
+    sku?: string;
+    canPay?: boolean;
+    signer_invocation_count?: number;
+    usdc_spent?: number;
+    quote?: { stepCount?: number };
+  };
+  assert.equal(body.sku, "vendor-prescreen");
+  assert.equal(body.canPay, false);
+  assert.equal(body.signer_invocation_count, 0);
+  assert.equal(body.usdc_spent, 0);
+  assert.equal(body.quote?.stepCount, 3);
+});
+
+test("POST /v1/product/confirm stays 403 spend_gated", async () => {
+  const result = await handleProxyRequest("POST", "/v1/product/confirm", { url: "https://monid.ai" });
+  assert.equal(result.status, 403);
+  const body = result.body as { code?: string; sku?: string; signer_invocation_count?: number };
+  assert.equal(body.code, "spend_gated");
+  assert.equal(body.sku, "vendor-prescreen");
+  assert.equal(body.signer_invocation_count, 0);
+});
+
+test("POST /v1/product/run returns the buyer envelope without spending", async () => {
+  const result = await handleProxyRequest(
+    "POST",
+    "/v1/product/run",
+    { url: "https://monid.ai" },
+    {},
+    fixture402Fetch()
+  );
+  assert.equal(result.status, 200);
+  const body = result.body as {
+    schema?: string;
+    decision?: string;
+    canPay?: boolean;
+    usdc_spent?: number;
+    deliver?: { delivered?: boolean; verdict?: string };
+    settlement?: { takeRate?: number; recipient?: string };
+  };
+  assert.equal(body.schema, "twzrd.product_run.v1");
+  assert.equal(body.decision, "quoted");
+  assert.equal(body.canPay, false);
+  assert.equal(body.usdc_spent, 0);
+  assert.equal(body.deliver?.delivered, false);
+  assert.equal(body.deliver?.verdict, "incomplete");
+  assert.equal(body.settlement?.takeRate, 0);
+  assert.equal(body.settlement?.recipient, "monid");
+});
+
+test("POST /v1/product/run with confirm stays 403 and does not pay", async () => {
+  const result = await handleProxyRequest(
+    "POST",
+    "/v1/product/run",
+    { url: "https://monid.ai" },
+    { "X-TWZRD-Confirm-Spend": "true" },
+    fixture402Fetch()
+  );
+  assert.equal(result.status, 403);
+  const body = result.body as {
+    schema?: string;
+    decision?: string;
+    nextGate?: string;
+    usdc_spent?: number;
+    deliver?: { delivered?: boolean };
+    hold?: { decision?: string };
+  };
+  assert.equal(body.schema, "twzrd.product_run.v1");
+  assert.equal(body.decision, "held");
+  assert.equal(body.nextGate, "proxy_wallet");
+  assert.equal(body.usdc_spent, 0);
+  assert.equal(body.deliver?.delivered, false);
+  assert.equal(body.hold?.decision, "spend_gated");
 });

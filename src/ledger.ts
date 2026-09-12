@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 export const LEDGER_SCHEMA = "monid-x402.ledger.v1" as const;
 
-export type LedgerKind = "refuse" | "spend_gated" | "paid" | "pay_failed";
+export type LedgerKind = "refuse" | "spend_gated" | "paid" | "pay_failed" | "quote" | "run" | "deliver";
 
 export type LedgerRecord = {
   schema: typeof LEDGER_SCHEMA;
@@ -223,9 +223,12 @@ export function tryAppendLedger(dir: string | undefined, event: LedgerAppend): s
 
 export function ledgerKindFromBody(body: unknown): LedgerKind {
   if (!body || typeof body !== "object") return "refuse";
-  const rec = body as { decision?: string; code?: string };
+  const rec = body as { decision?: string; code?: string; schema?: string };
   if (rec.decision === "spend_gated" || rec.code === "spend_gated") return "spend_gated";
   if (rec.decision === "paid" || rec.code === "paid") return "paid";
+  if (rec.schema === "twzrd.product_deliver.v1" || rec.decision === "deliver") return "deliver";
+  if (rec.schema === "twzrd.product_run.v1") return "run";
+  if (rec.decision === "quote") return "quote";
   if (rec.decision === "pay_failed" || rec.code === "pay_failed" || rec.code === "insufficient_funds") {
     return "pay_failed";
   }

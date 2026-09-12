@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>week 4 — vendor-prescreen film</title>
+  <style>
+    :root { --bg:#050505; --ink:#e9e6dc; --muted:#6f6c62; --soft:#a8a69c; --rule:#252a36; --accent:#d99a3a; --surface:#0a0d14; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 20px 72px; }
+    .kicker { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+    h1 { font-size: clamp(28px, 6vw, 44px); line-height: 1.1; margin: 8px 0 16px; }
+    p { color: var(--soft); max-width: 64ch; }
+    .num { font-family: ui-monospace, Menlo, monospace; font-size: clamp(28px, 5vw, 48px); font-weight: 700; }
+    .muted { color: var(--muted); }
+    a { color: var(--ink); }
+    pre { background: var(--surface); border: 1px solid var(--rule); padding: 16px; overflow: auto; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker">week 4 · sku film · not the prepaid $0.2394 restage</p>
+    <h1>Live 402 quote for vendor-prescreen. Deliver stays incomplete until pay.</h1>
+    <p class="num" id="ours">quote</p>
+    <p class="muted" id="sum">loading week4.json</p>
+    <p>Operate: <a href="./prescreen.html">prescreen.html</a> · buyer <code>GET /v1/product</code> then <code>POST /v1/product/run</code>.</p>
+    <pre id="packet">{}</pre>
+  </main>
+  <script>
+    fetch("./week4.json", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        document.getElementById("ours").textContent = d.quote && d.quote.totalUsd != null ? "$" + d.quote.totalUsd : "no quote";
+        document.getElementById("sum").textContent =
+          (d.sku || "") + " · vs incumbent $" + d.incumbentPerJobUsd +
+          " · delivered " + String(d.delivered) +
+          " · takeRate " + String(d.takeRate) +
+          " · usdc_spent " + String(d.usdc_spent);
+        document.getElementById("packet").textContent = JSON.stringify(d, null, 2);
+      })
+      .catch(() => {
+        document.getElementById("ours").textContent = "no film";
+      });
+  </script>
+</body>
+</html>

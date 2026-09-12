@@ -116,9 +116,12 @@ Do not sign SIWX. Confirm-spend does not unlock retrieve.
 
 `vendor-prescreen` is the monetizable job. tool-audit was the prepaid
 beginning slice. This SKU is quote → 402 → pay → deliver on the live
-rail versus the frozen Vendorapp $149/mo snapshot. Quote never signs.
-Listen confirm is 403. `POST /v1/product/run` is the buyer envelope.
-Deliver is `review_required` when paid and `incomplete` when not.
+rail (scrape, header-security-check, cookie-scan) versus the frozen
+Vendorapp $149/mo snapshot. Quote never signs. Listen confirm is 403.
+`GET /v1/product` lists the SKU. `POST /v1/product/run` is the buyer
+envelope (`twzrd.product_run.v1` + `twzrd.product_deliver.v1`). Deliver
+is `review_required` when paid and `incomplete` when not; absence of
+issues is not approval. Confirm-spend needs a refuse packet per seat.
 USDC settles to Monid `payTo`. TWZRD take-rate is 0.
 
 Still later: SIWX identity sign (only if policy ever sees a payable

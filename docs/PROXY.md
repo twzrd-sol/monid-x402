@@ -20,6 +20,12 @@ docs plus `src/proxy.ts`. `tool-audit` is off limits.
 | Code | HTTP | When |
 |---|---|---|
 | `GET /health` | 200 | Local listen probe; `listen` is the bound port; no upstream fetch |
+| `GET /prescreen` | 200 | SKU operate desk |
+| `GET /v1/product` | 200 | Agent SKU catalog; no wallet |
+| `POST /v1/product/quote` | 200 / 402 | Live 402 quote; no wallet |
+| `POST /v1/product/run` | 200 / 402 | Buyer envelope: quote + incomplete deliver; no wallet |
+| `POST /v1/product/run` + confirm | 403 | Same envelope, `nextGate: proxy_wallet`; no pay |
+| `POST /v1/product/confirm` | 403 | SKU confirm; no proxy wallet |
 | `over_cap` / `no_acceptable_offer` / `version_mismatch` / `resource_mismatch` | 402 | Policy refuse |
 | `spend_gated` | 403 | Policy allow, no confirm header, or confirm with no proxy wallet |
 | discover/inspect | upstream | Pass-through |
@@ -39,7 +45,8 @@ port, not a hardcoded 8788.
   "listen": "8788",
   "prepaid_run": false,
   "twzrd_gate": "0.9.5",
-  "desk": true
+  "desk": true,
+  "sku": "vendor-prescreen"
 }
 ```
 

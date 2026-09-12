@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vendor-prescreen — monid-x402</title>
+  <meta name="description" content="Live x402 vendor pre-screen. Three 402 seats versus Vendorapp $149/mo. Quote first. Nothing signs until confirm-spend.">
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: #0a0d14;
+      --ink: #e9e6dc;
+      --ink-soft: #a8a69c;
+      --ink-muted: #6f6c62;
+      --rule: #252a36;
+      --accent: #d99a3a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 15px; line-height: 1.5; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 20px 72px; }
+    .kicker {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    h1 { font-size: clamp(28px, 6vw, 44px); font-weight: 700; line-height: 1.1; margin: 8px 0 16px; }
+    p { color: var(--ink-soft); max-width: 64ch; }
+    .price { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin: 28px 0; }
+    .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(28px, 5vw, 48px); font-weight: 700; }
+    .muted { color: var(--ink-muted); }
+    a { color: var(--ink); }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      padding: 16px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+    }
+    .note { color: var(--ink-muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker">SKU · vendor-prescreen · x402 rail · not the prepaid film</p>
+    <h1>First-pass vendor evidence as a live 402 job, not a $149 month.</h1>
+    <p>tool-audit was the beginning slice: three prepaid Monid calls totaling $0.2385 versus Vendorapp Startup. This SKU is that job on <code>x402.monid.ai</code>. Buyers run quote → 402 → pay → deliver. Listen has no wallet. USDC settles to Monid. TWZRD take-rate is 0.</p>
+    <section class="price">
+      <div>
+        <div class="num">$149/mo</div>
+        <div class="muted">Vendorapp Startup<br>200 AI pre-screens<br><span class="note">frozen tool-audit snapshot</span></div>
+      </div>
+      <div class="muted">→</div>
+      <div>
+        <div class="num" id="ours">quote</div>
+        <div class="muted">This job on x402<br><span class="note" id="ours-note">load prescreen-quote.json</span></div>
+      </div>
+    </section>
+    <p>Operate: <code>GET http://127.0.0.1:8788/prescreen</code> · CLI <code>npm run quote:live</code> · buyer <code>POST /v1/product/run</code>. Do not restage the $0.2394 film.</p>
+    <p class="note" id="sum">loading last run</p>
+    <pre id="packet">{}</pre>
+  </main>
+  <script>
+    function paint(d) {
+      const quote = d.quote || d;
+      const usd = quote.quote ? quote.quote.totalUsd : quote.totalUsd;
+      const deliver = d.deliver || {};
+      document.getElementById("ours").textContent = usd != null ? "$" + usd : "no total";
+      document.getElementById("ours-note").textContent =
+        (d.targetUrl || quote.targetUrl || "") +
+        " · " + (d.nextGate || quote.nextGate || "") +
+        " · delivered " + String(deliver.delivered ?? false);
+      document.getElementById("sum").textContent =
+        (d.sku || "vendor-prescreen") +
+        " · " + (d.decision || quote.decision || "quote") +
+        " · verdict " + (deliver.verdict || "n/a") +
+        " · takeRate " + String((d.settlement && d.settlement.takeRate) ?? 0) +
+        " · usdc_spent " + String(d.usdc_spent ?? quote.usdc_spent ?? 0);
+      document.getElementById("packet").textContent = JSON.stringify(d, null, 2);
+    }
+    fetch("./prescreen-run.json", { cache: "no-store" })
+      .then((r) => {
+        if (!r.ok) throw new Error("missing-run");
+        return r.json();
+      })
+      .then(paint)
+      .catch(() =>
+        fetch("./prescreen-quote.json", { cache: "no-store" }).then((r) => {
+          if (!r.ok) throw new Error("missing");
+          return r.json();
+        }).then(paint)
+      )
+      .catch(() => {
+        document.getElementById("ours").textContent = "no quote";
+        document.getElementById("sum").textContent = "Run npm run quote:live. This page does not call Monid.";
+      });
+  </script>
+</body>
+</html>

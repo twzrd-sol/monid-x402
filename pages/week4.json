@@ -1,0 +1,23 @@
+{
+  "schema": "twzrd.week4_film.v1",
+  "sku": "vendor-prescreen",
+  "rail": "monid-x402",
+  "label": "Live x402 quote film. Not the prepaid tool-audit snapshot.",
+  "quotedAt": "2026-09-12T17:59:00.662Z",
+  "targetUrl": "https://monid.ai/",
+  "quote": {
+    "totalUsd": 0.2476,
+    "currency": "USDC",
+    "stepCount": 3
+  },
+  "incumbentPerJobUsd": 0.745,
+  "deltaUsd": 0.4974,
+  "delivered": false,
+  "verdict": "incomplete",
+  "canPay": false,
+  "takeRate": 0,
+  "settlement": "monid",
+  "signer_invocation_count": 0,
+  "usdc_spent": 0,
+  "source": "./prescreen-run.json"
+}
