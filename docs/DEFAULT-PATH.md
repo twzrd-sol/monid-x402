@@ -84,4 +84,12 @@ Pay stays gated unless `--confirm-spend` and a refuse packet already exist.
 2. FILM: `pages/week12.html` + `pages/week12.json` from verify + ledger.
    Never `tool-audit/pages/`.
 
+Live after #1 + #2 landed on `main` (verified 2026-09-12):
+
+- door: `export MONID_API_BASE_URL=http://127.0.0.1:8788` (`GET /health` 200, `prepaid_run: false`)
+- film: https://twzrd-sol.github.io/monid-x402/week12.json
+- film HTML: https://twzrd-sol.github.io/monid-x402/week12.html
+
+`31` x402 rows is inventory, not adoption. Leave `8787` alone.
+
 Still later: proxy wallet, SIWX retrieve, Solana, a second partner.

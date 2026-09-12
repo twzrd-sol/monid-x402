@@ -6,9 +6,11 @@ Spend only with `--confirm-spend` after a refuse packet is on disk.
 
 One agent per lane. If you need a file another lane owns, stop.
 
-## Listen (week 0, f4d5bdf)
+## Listen (week 1-2 door)
 
-Default Path proxy is loopback **8788** only. Front is loopback **8790**.
+Default Path proxy is loopback **8788** only. `GET /health` must be 200 with
+`listen: "8788"` and `prepaid_run: false`. Front is loopback **8790**.
+Public week-1-2 film: https://twzrd-sol.github.io/monid-x402/week12.json
 
 ```bash
 export MONID_API_BASE_URL=http://127.0.0.1:8788
