@@ -16,6 +16,7 @@
     "test": "npm run build && node --test dist/*.test.js",
     "probe:live": "npm run build && node dist/cli.js probe",
     "refuse:live": "npm run build && node dist/cli.js refuse --max-amount-micro 1",
+    "decision:live": "npm run build && node dist/cli.js decision",
     "catalog:live": "npm run build && node dist/cli.js catalog --seeds evidence/seeds.json --out evidence/catalog-matrix.json",
     "listen": "npm run build && node dist/cli.js listen --port 8788",
     "front": "npm run build && node dist/cli.js front --port 8790",

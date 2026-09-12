@@ -64,6 +64,7 @@ Independent nodes. The maker of a lane does not grade it.
 6. Company brief is the first high-TA buyer loop: brand retrieve + homepage scrape.
 
 Pay stays gated unless `--confirm-spend` and a refuse packet already exist.
+`npm run decision:live` records that hold without constructing a signer.
 
 ## Week 1 (door for other agents)
 

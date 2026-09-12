@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { companyBriefPlan } from "./brief.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
+import { decidePayPath } from "./decision.js";
 import { inspectEndpoint } from "./inspect.js";
 import { appendLedger } from "./ledger.js";
 import { PayGatedError, payRun } from "./pay.js";
@@ -191,6 +192,35 @@ async function brief() {
   console.log(JSON.stringify(packet, null, 2));
 }
 
+async function decision() {
+  const target = targetFromArgs();
+  const probe = await probeRun402(target);
+  const verdict = decidePayPath({
+    inspectKeyPresent: Boolean(process.env.MONID_API_KEY),
+    confirmSpend: flag("--confirm-spend"),
+    privateKeyPresent: Boolean(process.env.PRIVATE_KEY?.startsWith("0x")),
+    proxyHasWallet: false,
+    defaultCap: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy({ maxAmountMicro: 1n })),
+    floor: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy())
+  });
+  const out = arg("--out");
+  const body = {
+    ...verdict,
+    resource: probe.paymentRequired.resource.url,
+    target: probe.target,
+    selected: probe.paymentRequired.accepts[0]
+      ? {
+          network: probe.paymentRequired.accepts[0].network,
+          amount: probe.paymentRequired.accepts[0].amount,
+          payTo: probe.paymentRequired.accepts[0].payTo
+        }
+      : null
+  };
+  if (out) writeFileSync(out, `${JSON.stringify(body, null, 2)}\n`);
+  console.log(JSON.stringify(body, null, 2));
+  if (!verdict.canPay) process.exitCode = 2;
+}
+
 async function catalog() {
   const seedPath = arg("--seeds", "evidence/seeds.json")!;
   const out = arg("--out", "evidence/catalog-matrix.json")!;
@@ -257,11 +287,12 @@ async function main() {
   if (command === "probe") return probe();
   if (command === "refuse") return refuse();
   if (command === "pay") return pay();
+  if (command === "decision") return decision();
   if (command === "catalog") return catalog();
   if (command === "listen") return listen();
   if (command === "front") return front();
   if (command === "brief") return brief();
-  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen|front|brief>");
+  console.error("Usage: monid-x402 <probe|refuse|catalog|decision|pay|listen|front|brief>");
   process.exitCode = 2;
 }
 

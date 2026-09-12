@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { MONID_API_URL, MONID_X402_RUN_URL } from "./constants.js";
+import { ledgerKindFromBody, tryAppendLedger } from "./ledger.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { probeRun402 } from "./probe.js";
 import { refuseReceipt, spendGatedReceipt } from "./receipt.js";
@@ -8,6 +9,10 @@ import type { RunTarget } from "./types.js";
 export const PREPAID_RUN_URL = `${MONID_API_URL}/run`;
 
 export type ProxyHeaders = Record<string, string | string[] | undefined>;
+
+export type ProxyOptions = {
+  ledgerDir?: string;
+};
 
 function readJson(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
@@ -95,7 +100,8 @@ export async function handleProxyRequest(
   urlPath: string,
   body: unknown,
   headers: ProxyHeaders = {},
-  fetchImpl: typeof fetch = globalThis.fetch
+  fetchImpl: typeof fetch = globalThis.fetch,
+  options: ProxyOptions = {}
 ): Promise<{ status: number; body: unknown }> {
   if (method === "GET" && urlPath === "/health") {
     return {
@@ -133,29 +139,28 @@ export async function handleProxyRequest(
       defaultPolicy({ maxAmountMicro: maxAmountMicro(headers) })
     );
     if (verdict.decision === "refuse") {
-      return {
-        status: 402,
-        body: refuseReceipt(target, verdict, MONID_X402_RUN_URL)
-      };
+      return ledgered(402, refuseReceipt(target, verdict, MONID_X402_RUN_URL), options.ledgerDir);
     }
     if (!confirmSpend(headers)) {
-      return {
-        status: 403,
-        body: spendGatedReceipt(
+      return ledgered(
+        403,
+        spendGatedReceipt(
           target,
           MONID_X402_RUN_URL,
           "policy allow; no X-TWZRD-Confirm-Spend. Week 0 does not sign."
-        )
-      };
+        ),
+        options.ledgerDir
+      );
     }
-    return {
-      status: 403,
-      body: spendGatedReceipt(
+    return ledgered(
+      403,
+      spendGatedReceipt(
         target,
         MONID_X402_RUN_URL,
         "Week 0: no proxy wallet. Confirm is not enough to sign."
-      )
-    };
+      ),
+      options.ledgerDir
+    );
   }
 
   return { status: 404, body: { code: 404, message: `no route ${method} ${urlPath}` } };
@@ -171,7 +176,9 @@ export function startProxy(port = 0): Promise<{ server: Server; port: number }> 
           req.method ?? "GET",
           urlPath,
           body,
-          req.headers
+          req.headers,
+          globalThis.fetch,
+          { ledgerDir: process.env.MONID_LEDGER_DIR ?? "evidence/ledger" }
         );
         send(res, result.status, result.body);
       } catch (error) {
@@ -190,4 +197,17 @@ export function assertNotPrepaid(url: string): void {
   if (url === PREPAID_RUN_URL || url.startsWith(`${MONID_API_URL}/run`)) {
     throw new Error("Default Path forbids prepaid api.monid.ai/v1/run");
   }
+}
+
+function ledgered(
+  status: number,
+  body: unknown,
+  ledgerDir?: string
+): { status: number; body: unknown } {
+  tryAppendLedger(ledgerDir, {
+    kind: ledgerKindFromBody(body),
+    httpStatus: status,
+    receipt: body
+  });
+  return { status, body };
 }
