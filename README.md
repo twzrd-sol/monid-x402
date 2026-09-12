@@ -42,6 +42,7 @@ npm run front
 npm run doctor
 npm run index
 npm run verify
+npm run retrieve:live
 ```
 
 `refuse:live` hits the live 402, applies `--max-amount-micro 1`, and writes a
@@ -109,3 +110,7 @@ node dist/cli.js pay --confirm-spend --max-amount-micro 10000 --url https://exam
 
 `pay` reads `PRIVATE_KEY` or `--key-file` / `EVM_PRIVATE_KEY_FILE` (JSON with
 `privateKey`). Do not commit a key. Front: `http://127.0.0.1:8790`.
+
+Retrieve is week 3. `GET /v1/runs/:id` 402s with empty `accepts[]` and SIWX.
+That is not a USDC offer. `retrieve` writes a refuse packet. Do not pass
+`--confirm-spend`. Listen `GET /v1/runs/:id` is the same hold.

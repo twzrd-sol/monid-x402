@@ -25,6 +25,7 @@
     "brief:pay": "npm run build && node dist/cli.js brief --domain canva.com --confirm-spend --max-amount-micro 10000",
     "index": "npm run build && node dist/cli.js index",
     "verify": "npm run build && node dist/cli.js verify",
+    "retrieve:live": "npm run build && node dist/cli.js retrieve",
     "doctor": "npm run build && node dist/cli.js doctor"
   },
   "keywords": [

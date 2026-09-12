@@ -159,6 +159,29 @@ test("GET /v1/runs is 501 and does not fetch prepaid", async () => {
   assert.equal(fetched, false);
 });
 
+test("GET /v1/runs/:id probes x402 retrieve and refuses SIWX without a signer", async () => {
+  const siwx = JSON.parse(
+    readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "../evidence/live-402-retrieve-siwx.json"),
+      "utf8"
+    )
+  ) as { paymentRequired: unknown };
+  const header = Buffer.from(JSON.stringify(siwx.paymentRequired), "utf8").toString("base64");
+  const runId = "01M2BC306GSMD00DZZAPNSCSAZ";
+  let fetched = "";
+  const result = await handleProxyRequest("GET", `/v1/runs/${runId}`, {}, {}, async (input) => {
+    fetched = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    return new Response("{}", { status: 402, headers: { "PAYMENT-REQUIRED": header } });
+  });
+  assert.equal(fetched, `https://x402.monid.ai/v1/runs/${runId}`);
+  assert.equal(fetched.includes("api.monid.ai"), false);
+  assert.equal(result.status, 402);
+  const body = result.body as { code?: string; signer_invocation_count?: number; usdc_spent?: number };
+  assert.equal(body.code, "siwx_no_pay_offer");
+  assert.equal(body.signer_invocation_count, 0);
+  assert.equal(body.usdc_spent, 0);
+});
+
 test("allow + confirm is still 403; week 0 has no proxy wallet", async () => {
   const result = await handleProxyRequest(
     "POST",

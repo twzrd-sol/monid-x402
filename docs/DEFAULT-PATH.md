@@ -92,4 +92,19 @@ Live after #1 + #2 landed on `main` (verified 2026-09-12):
 
 `31` x402 rows is inventory, not adoption. Leave `8787` alone.
 
-Still later: proxy wallet, SIWX retrieve, Solana, a second partner.
+## Week 3 (SIWX retrieve, no identity sign)
+
+Live `GET https://x402.monid.ai/v1/runs/:id` returns HTTP 402 with
+`accepts: []` and a `sign-in-with-x` extension. That is identity, not a
+USDC offer. Policy refuses `siwx_no_pay_offer`. Signer stays 0.
+
+1. Parse empty `accepts[]` so the 402 can be graded instead of thrown away.
+2. CLI `retrieve` (no `--confirm-spend`) writes a refuse packet.
+3. Listen `GET /v1/runs/:id` probes the x402 host and returns that refuse.
+   `GET /v1/runs` list stays 501 (prepaid list).
+4. VERIFY writes `evidence/verify/week3.json`. Same-session grade only.
+
+Do not sign SIWX. Confirm-spend does not unlock retrieve. No new film.
+
+Still later: SIWX identity sign (only if policy ever sees a payable
+accept), proxy wallet, Solana, a second partner.

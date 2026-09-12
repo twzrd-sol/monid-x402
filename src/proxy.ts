@@ -4,6 +4,7 @@ import { ledgerKindFromBody, tryAppendLedger } from "./ledger.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { probeRun402 } from "./probe.js";
 import { refuseReceipt, spendGatedReceipt } from "./receipt.js";
+import { parseRunsPath, probeRetrieve402, retrieveRefuse } from "./retrieve.js";
 import type { RunTarget } from "./types.js";
 
 export const PREPAID_RUN_URL = `${MONID_API_URL}/run`;
@@ -130,7 +131,15 @@ export async function handleProxyRequest(
   }
 
   if (method === "GET" && urlPath.startsWith("/v1/runs")) {
-    return { status: 501, body: { code: 501, message: "do not forward prepaid run list" } };
+    const parsed = parseRunsPath(urlPath);
+    if (parsed.kind === "list") {
+      return { status: 501, body: { code: 501, message: "do not forward prepaid run list" } };
+    }
+    if (parsed.kind === "bad") {
+      return { status: 400, body: { code: 400, message: "invalid run id" } };
+    }
+    const probe = await probeRetrieve402(parsed.runId, guardedFetch(fetchImpl));
+    return ledgered(402, retrieveRefuse(probe), options.ledgerDir);
   }
 
   if (method === "POST" && urlPath === "/v1/discover") {

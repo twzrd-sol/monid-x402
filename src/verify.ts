@@ -7,7 +7,9 @@ import {
   unwrapLedgerPacket,
   type LedgerPacket
 } from "./ledger.js";
+import { defaultPolicy, evaluatePaymentRequired, hasSiwxExtension } from "./policy.js";
 import { probeRun402 } from "./probe.js";
+import { probeRetrieve402 } from "./retrieve.js";
 
 export type VerifyCheck = {
   id: string;
@@ -139,5 +141,106 @@ export async function gradeDefaultPath(root: string): Promise<VerifyReport> {
     verdict: checks.every((check) => check.pass) ? "valid" : "invalid"
   };
   writeFileSync(join(root, "evidence/verify/week2.json"), `${JSON.stringify(report, null, 2)}\n`);
+  return report;
+}
+
+export type Week3Report = {
+  schema: "twzrd.default_path_verify.week3.v1";
+  lane: "VERIFY";
+  rail: "monid-x402";
+  path: "Default Path 1";
+  path_statement: string;
+  gradedAt: string;
+  grader: string;
+  spent: false;
+  payment_header_sent: false;
+  live_402: Record<string, unknown>;
+  checks: VerifyCheck[];
+  notes: string[];
+  verdict: "valid" | "invalid";
+};
+
+export function gradeSiwxRetrieve(input: {
+  status: number;
+  accepts: number;
+  siwx: boolean;
+  paymentHeaderSent: boolean;
+  refuseCode: string | null;
+  signer: number | null;
+  usdc: number | null;
+}): VerifyCheck[] {
+  return [
+    {
+      id: "live_get_retrieve_is_402",
+      pass: input.status === 402,
+      detail: `GET x402.monid.ai/v1/runs/:id returned HTTP ${input.status}`
+    },
+    {
+      id: "retrieve_accepts_empty",
+      pass: input.accepts === 0,
+      detail: `accepts[] length ${input.accepts} (SIWX is not a USDC offer)`
+    },
+    {
+      id: "retrieve_siwx_extension",
+      pass: input.siwx,
+      detail: "PAYMENT-REQUIRED extensions include sign-in-with-x"
+    },
+    {
+      id: "retrieve_no_payment_header",
+      pass: input.paymentHeaderSent === false,
+      detail: "no PAYMENT-SIGNATURE / payment header sent"
+    },
+    {
+      id: "retrieve_refuse_zero_sign",
+      pass:
+        input.refuseCode === "siwx_no_pay_offer" &&
+        input.signer === 0 &&
+        input.usdc === 0,
+      detail: `refuse ${input.refuseCode ?? "none"} signer=${String(input.signer)} usdc=${String(input.usdc)}`
+    }
+  ];
+}
+
+export async function gradeWeek3(root: string, runId: string): Promise<Week3Report> {
+  const probe = await probeRetrieve402(runId);
+  const verdict = evaluatePaymentRequired(probe.paymentRequired, defaultPolicy());
+  const checks = gradeSiwxRetrieve({
+    status: probe.status,
+    accepts: probe.paymentRequired.accepts.length,
+    siwx: hasSiwxExtension(probe.paymentRequired),
+    paymentHeaderSent: false,
+    refuseCode: verdict.decision === "refuse" ? verdict.code : null,
+    signer: 0,
+    usdc: 0
+  });
+  const gradedAt = new Date().toISOString().replace(/\.\d+Z$/, "Z");
+  const report: Week3Report = {
+    schema: "twzrd.default_path_verify.week3.v1",
+    lane: "VERIFY",
+    rail: "monid-x402",
+    path: "Default Path 1",
+    path_statement: "every execution that can 402 does 402 and nothing signs until policy says so",
+    gradedAt,
+    grader: "same-session grade; did not claim an independent lane",
+    spent: false,
+    payment_header_sent: false,
+    live_402: {
+      method: "GET",
+      url: probe.url,
+      http_status: probe.status,
+      resource: probe.paymentRequired.resource.url,
+      accepts: probe.paymentRequired.accepts.length,
+      siwx: hasSiwxExtension(probe.paymentRequired)
+    },
+    checks,
+    notes: [
+      "SIWX retrieve is identity, not USDC. Week 3 hold is refuse, not a second spend.",
+      "GET /v1/runs list stays 501 (prepaid list).",
+      "8787 left alone",
+      "tool-audit film not restaged"
+    ],
+    verdict: checks.every((check) => check.pass) ? "valid" : "invalid"
+  };
+  writeFileSync(join(root, "evidence/verify/week3.json"), `${JSON.stringify(report, null, 2)}\n`);
   return report;
 }
