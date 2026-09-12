@@ -38,6 +38,17 @@ test("rejects a non-v2 body", () => {
   assert.throws(() => parsePaymentRequired({ x402Version: 1, resource: {}, accepts: [] }), /x402Version/);
 });
 
+test("v2 empty accepts parses so SIWX retrieve can be refused", () => {
+  const required = parsePaymentRequired({
+    x402Version: 2,
+    resource: { url: "http://x402.monid.ai/x402/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ" },
+    accepts: [],
+    extensions: { "sign-in-with-x": { info: { domain: "x402.monid.ai" } } }
+  });
+  assert.equal(required.accepts.length, 0);
+  assert.ok(required.extensions?.["sign-in-with-x"]);
+});
+
 test("decodePaymentResponse reads payer and tx; junk is null", () => {
   const header = Buffer.from(
     JSON.stringify({

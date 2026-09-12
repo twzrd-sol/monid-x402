@@ -12,6 +12,11 @@ function norm(value: string): string {
   return value.toLowerCase();
 }
 
+export function hasSiwxExtension(required: PaymentRequired): boolean {
+  const ext = required.extensions?.["sign-in-with-x"];
+  return Boolean(ext && typeof ext === "object" && !Array.isArray(ext));
+}
+
 export function defaultPolicy(overrides: Partial<Policy> = {}): Policy {
   return {
     maxAmountMicro: 10_000n,
@@ -46,6 +51,17 @@ export function evaluatePaymentRequired(
       selected: null,
       reason: `x402Version ${required.x402Version} is not ${policy.requireVersion}.`,
       code: "version_mismatch"
+    };
+  }
+  if (required.accepts.length === 0) {
+    const siwx = hasSiwxExtension(required);
+    return {
+      decision: "refuse",
+      selected: null,
+      reason: siwx
+        ? "SIWX retrieve 402 has no payable accepts[]. Identity sign is not a USDC offer. Nothing signs."
+        : "No acceptable offer. Rejected: empty.",
+      code: siwx ? "siwx_no_pay_offer" : "no_acceptable_offer"
     };
   }
   if (required.resource.url !== policy.requireResourceUrl) {

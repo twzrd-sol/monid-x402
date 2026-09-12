@@ -7,6 +7,7 @@ import { ledgerKindFromBody, tryAppendLedger } from "./ledger.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { probeRun402 } from "./probe.js";
 import { refuseReceipt, spendGatedReceipt } from "./receipt.js";
+import { parseRunsPath, probeRetrieve402, retrieveRefuse } from "./retrieve.js";
 import type { RunTarget } from "./types.js";
 
 export const PREPAID_RUN_URL = `${MONID_API_URL}/run`;
@@ -14,6 +15,7 @@ export const PREPAID_RUN_URL = `${MONID_API_URL}/run`;
 export type ProxyHeaders = Record<string, string | string[] | undefined>;
 
 export type ProxyOptions = {
+  listenPort?: number;
   ledgerDir?: string;
 };
 
@@ -98,6 +100,19 @@ async function forwardMonid(
   }
 }
 
+function ledgered(
+  status: number,
+  body: unknown,
+  ledgerDir?: string
+): { status: number; body: unknown } {
+  tryAppendLedger(ledgerDir, {
+    kind: ledgerKindFromBody(body),
+    httpStatus: status,
+    receipt: body
+  });
+  return { status, body };
+}
+
 export async function handleProxyRequest(
   method: string,
   urlPath: string,
@@ -112,7 +127,7 @@ export async function handleProxyRequest(
       body: {
         ok: true,
         rail: "monid-x402",
-        listen: "8788",
+        listen: String(options.listenPort ?? 8788),
         prepaid_run: false,
         twzrd_gate: TWZRD_GATE_PIN,
         desk: true
@@ -121,7 +136,15 @@ export async function handleProxyRequest(
   }
 
   if (method === "GET" && urlPath.startsWith("/v1/runs")) {
-    return { status: 501, body: { code: 501, message: "Week 0: do not forward prepaid run list" } };
+    const parsed = parseRunsPath(urlPath);
+    if (parsed.kind === "list") {
+      return { status: 501, body: { code: 501, message: "do not forward prepaid run list" } };
+    }
+    if (parsed.kind === "bad") {
+      return { status: 400, body: { code: 400, message: "invalid run id" } };
+    }
+    const probe = await probeRetrieve402(parsed.runId, guardedFetch(fetchImpl));
+    return ledgered(402, retrieveRefuse(probe), options.ledgerDir);
   }
 
   if (method === "POST" && urlPath === "/v1/discover") {
@@ -157,7 +180,7 @@ export async function handleProxyRequest(
         spendGatedReceipt(
           target,
           MONID_X402_RUN_URL,
-          "policy allow; no X-TWZRD-Confirm-Spend. Week 0 does not sign."
+          "policy allow; no X-TWZRD-Confirm-Spend. Listen does not sign."
         ),
         options.ledgerDir
       );
@@ -167,7 +190,7 @@ export async function handleProxyRequest(
       spendGatedReceipt(
         target,
         MONID_X402_RUN_URL,
-        "Week 0: no proxy wallet. Confirm is not enough to sign."
+        "Listen has no proxy wallet. Confirm is not enough to sign."
       ),
       options.ledgerDir
     );
@@ -183,6 +206,7 @@ const DESK_HTML = readFileSync(
 
 export function startProxy(port = 0): Promise<{ server: Server; port: number }> {
   return new Promise((resolve) => {
+    const bound = { port };
     const server = createServer(async (req, res) => {
       try {
         const urlPath = req.url?.split("?")[0] ?? "/";
@@ -198,7 +222,10 @@ export function startProxy(port = 0): Promise<{ server: Server; port: number }> 
           body,
           req.headers,
           globalThis.fetch,
-          { ledgerDir: process.env.MONID_LEDGER_DIR ?? "evidence/ledger" }
+          {
+            listenPort: bound.port,
+            ledgerDir: process.env.MONID_LEDGER_DIR ?? "evidence/ledger"
+          }
         );
         send(res, result.status, result.body);
       } catch (error) {
@@ -208,6 +235,7 @@ export function startProxy(port = 0): Promise<{ server: Server; port: number }> 
     server.listen(port, "127.0.0.1", () => {
       const addr = server.address();
       if (!addr || typeof addr === "string") throw new Error("proxy bind failed");
+      bound.port = addr.port;
       resolve({ server, port: addr.port });
     });
   });
@@ -217,17 +245,4 @@ export function assertNotPrepaid(url: string): void {
   if (url === PREPAID_RUN_URL || url.startsWith(`${MONID_API_URL}/run`)) {
     throw new Error("Default Path forbids prepaid api.monid.ai/v1/run");
   }
-}
-
-function ledgered(
-  status: number,
-  body: unknown,
-  ledgerDir?: string
-): { status: number; body: unknown } {
-  tryAppendLedger(ledgerDir, {
-    kind: ledgerKindFromBody(body),
-    httpStatus: status,
-    receipt: body
-  });
-  return { status, body };
 }

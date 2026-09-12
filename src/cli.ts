@@ -4,17 +4,21 @@ import { companyBriefPlan } from "./brief.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
 import { decidePayPath, type WashCoverage } from "./decision.js";
+import { doctor } from "./doctor.js";
+import { checkMatrix, loadMatrix, writeDriftReport } from "./drift.js";
+import { pagesRoot, startFront } from "./front.js";
+import { scrapePayInput } from "./input.js";
 import { evaluateWashPayTo } from "./twzrd-gate.js";
 import { inspectEndpoint } from "./inspect.js";
-import { appendLedger } from "./ledger.js";
+import { appendLedger, rebuildLedgerIndex, requireRefuseOnDisk } from "./ledger.js";
 import { PayGatedError, payRun } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
-import { pagesRoot, startFront } from "./front.js";
-import { scrapePayInput } from "./input.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
+import { probeRetrieve402, retrieveRefuse } from "./retrieve.js";
+import { gradeDefaultPath, gradeWeek3 } from "./verify.js";
 
 function arg(name: string, fallback?: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -73,6 +77,7 @@ function writePacket(packet: { decision: string }): string {
   const out = arg("--out");
   const path = out ?? appendLedger("evidence/ledger", packet);
   if (out) writeFileSync(path, `${JSON.stringify(packet, null, 2)}\n`);
+  rebuildLedgerIndex("evidence/ledger");
   writeFileSync("pages/data.json", `${JSON.stringify(packet, null, 2)}\n`);
   return path;
 }
@@ -135,12 +140,14 @@ async function pay() {
       "Pay is gated. Refuse is the default. Re-run with --confirm-spend and a key after a refuse receipt exists."
     );
   }
+  const target = targetFromArgs();
+  requireRefuseOnDisk("evidence/ledger", target);
   const maxAmountMicro = BigInt(arg("--max-amount-micro", "10000")!);
   const result = await payRun({
     confirmSpend: true,
     privateKey: optionalPrivateKey(),
     policy: defaultPolicy({ maxAmountMicro }),
-    target: targetFromArgs()
+    target
   });
   const out = writePacket(result.receipt);
   console.log(JSON.stringify({ out, ...result }, null, 2));
@@ -168,6 +175,7 @@ async function brief() {
       steps.push({ role: step.role, why: step.why, target: step.target, kind: "refused", receipt });
       continue;
     }
+    requireRefuseOnDisk("evidence/ledger", step.target);
     const result = await payRun({
       confirmSpend: true,
       privateKey: optionalPrivateKey(),
@@ -246,11 +254,16 @@ async function catalog() {
   const out = arg("--out", "evidence/catalog-matrix.json")!;
   const rows = await crawlSeeds(loadSeeds(seedPath), { delayMs: 200 });
   writeMatrix(out, rows);
+  const driftOut = arg("--drift", "evidence/catalog-drift.json")!;
+  const drift = checkMatrix(loadMatrix(out));
+  writeDriftReport(driftOut, drift);
   console.log(
     JSON.stringify(
       {
         out,
-        x402: rows.filter((r) => r.class === "x402").length,
+        drift: driftOut,
+        x402: drift.x402,
+        drifted: drift.drifted,
         not_found: rows.filter((r) => r.class === "not_found").length,
         other: rows.filter((r) => r.class === "other").length,
         rows
@@ -270,8 +283,9 @@ async function listen() {
   const base = `http://127.0.0.1:${bound}`;
   console.error(`monid-x402 proxy ${base}`);
   console.error(`MONID_API_BASE_URL=${base}`);
-  console.error("POST /v1/run → x402 + refuse/spend_gated. Week 0 proxy has no wallet.");
-  console.error("Desk GET /  ·  health names twzrd-x402-gate@0.9.5  ·  pay is CLI only");
+  console.error("POST /v1/run → x402 + refuse/spend_gated. Listen has no wallet.");
+  console.error("Desk GET /  ·  SKU GET /prescreen  ·  POST /v1/product/run  ·  pay is CLI only");
+  console.error("GET /v1/runs/:id → SIWX retrieve refuse. GET /v1/runs list is 501.");
 }
 
 async function front() {
@@ -279,6 +293,83 @@ async function front() {
   const { port: bound } = await startFront(port, pagesRoot());
   console.error(`monid-x402 front http://127.0.0.1:${bound}`);
   console.error("canonical packet: GET /paid.json (not overwritten by refuse)");
+}
+
+function indexLedger() {
+  const dir = arg("--dir", "evidence/ledger")!;
+  const report = rebuildLedgerIndex(dir);
+  console.log(JSON.stringify({ dir, totals: report.totals }, null, 2));
+}
+
+function defaultRunId(): string {
+  const fromArg = arg("--run-id");
+  if (fromArg) return fromArg;
+  for (const path of ["pages/data.json", "pages/paid.json"]) {
+    try {
+      const rec = JSON.parse(readFileSync(path, "utf8")) as { runId?: string; body?: { runId?: string } };
+      const id = rec.runId ?? rec.body?.runId;
+      if (typeof id === "string" && id) return id;
+    } catch {
+      /* next */
+    }
+  }
+  throw new Error("retrieve needs --run-id or a runId on pages/paid.json");
+}
+
+async function retrieve() {
+  if (flag("--confirm-spend")) {
+    throw new PayGatedError(
+      "Retrieve SIWX is not a USDC pay. Confirm-spend does not sign identity. Refuse is the week-3 hold."
+    );
+  }
+  const runId = defaultRunId();
+  const probe = await probeRetrieve402(runId);
+  const receipt = retrieveRefuse(probe);
+  const out = writePacket(receipt);
+  writeFileSync(
+    "evidence/live-402-retrieve.json",
+    `${JSON.stringify(
+      {
+        url: probe.url,
+        status: probe.status,
+        accepts: probe.paymentRequired.accepts.length,
+        siwx: Boolean(probe.paymentRequired.extensions?.["sign-in-with-x"]),
+        receipt
+      },
+      null,
+      2
+    )}\n`
+  );
+  console.log(JSON.stringify({ out, receipt }, null, 2));
+  if (receipt.signer_invocation_count !== 0 || receipt.usdc_spent !== 0) {
+    process.exitCode = 2;
+  }
+}
+
+async function verify() {
+  const report = await gradeDefaultPath(process.cwd());
+  const week3 = await gradeWeek3(process.cwd(), defaultRunId());
+  console.log(
+    JSON.stringify(
+      {
+        week2: { verdict: report.verdict, gradedAt: report.gradedAt, checks: report.checks },
+        week3: { verdict: week3.verdict, gradedAt: week3.gradedAt, checks: week3.checks }
+      },
+      null,
+      2
+    )
+  );
+  if (report.verdict !== "valid" || week3.verdict !== "valid") process.exitCode = 2;
+}
+
+async function doctorCmd() {
+  const report = await doctor({
+    healthUrl: arg("--health"),
+    ledgerDir: arg("--dir", "evidence/ledger"),
+    matrixPath: arg("--matrix", "evidence/catalog-matrix.json")
+  });
+  console.log(JSON.stringify(report, null, 2));
+  if (!report.ok) process.exitCode = 2;
 }
 
 async function main() {
@@ -291,7 +382,13 @@ async function main() {
   if (command === "listen") return listen();
   if (command === "front") return front();
   if (command === "brief") return brief();
-  console.error("Usage: monid-x402 <probe|refuse|catalog|decision|pay|listen|front|brief>");
+  if (command === "index") return indexLedger();
+  if (command === "retrieve") return retrieve();
+  if (command === "verify") return verify();
+  if (command === "doctor") return doctorCmd();
+  console.error(
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|listen|front|brief|index|verify|doctor>"
+  );
   process.exitCode = 2;
 }
 

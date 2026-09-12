@@ -52,6 +52,23 @@ test("refuses a foreign payTo", () => {
   assert.equal(verdict.code, "no_acceptable_offer");
 });
 
+test("empty accepts with SIWX is siwx_no_pay_offer, not allow", () => {
+  const siwx = parsePaymentRequired(
+    (
+      JSON.parse(
+        readFileSync(
+          join(dirname(fileURLToPath(import.meta.url)), "../evidence/live-402-retrieve-siwx.json"),
+          "utf8"
+        )
+      ) as { paymentRequired: unknown }
+    ).paymentRequired
+  );
+  const verdict = evaluatePaymentRequired(siwx, defaultPolicy());
+  assert.equal(verdict.decision, "refuse");
+  if (verdict.decision !== "refuse") throw new Error("expected refuse");
+  assert.equal(verdict.code, "siwx_no_pay_offer");
+});
+
 test("onBeforePaymentCreation aborts over cap without a wallet", async () => {
   const hook = createBeforePaymentCreationHook(defaultPolicy({ maxAmountMicro: 1n }));
   const result = await hook({ paymentRequired: required });

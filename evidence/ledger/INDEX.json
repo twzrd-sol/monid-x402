@@ -6,6 +6,8 @@
       "schema": "twzrd.gate_eval_refuse.v1",
       "signer_invocation_count": 0,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:40:10.355Z"
@@ -16,39 +18,11 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 402,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:40:13.953Z"
-    },
-    {
-      "name": "2026-09-12T034028679Z-pay_failed.json",
-      "decision": "pay_failed",
-      "schema": "twzrd.gate_eval_pay_failed.v1",
-      "signer_invocation_count": 1,
-      "usdc_spent": 0,
-      "provider": "context.dev",
-      "endpoint": "/web/scrape/markdown",
-      "capturedAt": "2026-09-12T03:40:28.679Z"
-    },
-    {
-      "name": "2026-09-12T034059317Z-pay_failed.json",
-      "decision": "pay_failed",
-      "schema": "twzrd.gate_eval_pay_failed.v1",
-      "signer_invocation_count": 1,
-      "usdc_spent": 0,
-      "provider": "context.dev",
-      "endpoint": "/web/scrape/markdown",
-      "capturedAt": "2026-09-12T03:40:59.317Z"
-    },
-    {
-      "name": "2026-09-12T034112725Z-pay_failed.json",
-      "decision": "pay_failed",
-      "schema": "twzrd.gate_eval_pay_failed.v1",
-      "signer_invocation_count": 1,
-      "usdc_spent": 0,
-      "provider": "context.dev",
-      "endpoint": "/web/scrape/markdown",
-      "capturedAt": "2026-09-12T03:41:12.725Z"
     },
     {
       "name": "2026-09-12T034126374Z-paid.json",
@@ -56,6 +30,8 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:41:26.373Z"
@@ -66,6 +42,8 @@
       "schema": "twzrd.gate_eval_refuse.v1",
       "signer_invocation_count": 0,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/brand/retrieve",
       "capturedAt": "2026-09-12T03:44:59.893Z"
@@ -76,19 +54,11 @@
       "schema": "twzrd.gate_eval_refuse.v1",
       "signer_invocation_count": 0,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:45:00.123Z"
-    },
-    {
-      "name": "2026-09-12T034501096Z-pay_failed.json",
-      "decision": "pay_failed",
-      "schema": "twzrd.gate_eval_pay_failed.v1",
-      "signer_invocation_count": 1,
-      "usdc_spent": 0,
-      "provider": "context.dev",
-      "endpoint": "/brand/retrieve",
-      "capturedAt": "2026-09-12T03:45:01.096Z"
     },
     {
       "name": "2026-09-12T034507262Z-paid.json",
@@ -96,6 +66,8 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:45:07.262Z"
@@ -106,16 +78,93 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
       "provider": "context.dev",
       "endpoint": "/brand/retrieve",
       "capturedAt": "2026-09-12T03:45:17.296Z"
+    },
+    {
+      "name": "2026-09-12T175422827Z-paid.json",
+      "decision": "paid",
+      "schema": "twzrd.gate_eval_paid.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T17:54:22.827Z"
+    },
+    {
+      "name": "2026-09-12T175916254Z-refuse.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
+      "provider": "x402.monid.ai",
+      "endpoint": "/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+      "capturedAt": "2026-09-12T17:59:16.254Z"
+    },
+    {
+      "name": "20260912T031545Z-refuse-0001.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": 402,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:15:45.865Z"
+    },
+    {
+      "name": "20260912T031800Z-listen-confirm-still-gated-0001.json",
+      "decision": "spend_gated",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": 403,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:15:45.160Z"
+    },
+    {
+      "name": "20260912T031800Z-listen-over_cap-0001.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": 402,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:15:44.864Z"
+    },
+    {
+      "name": "20260912T031800Z-listen-spend_gated-0001.json",
+      "decision": "spend_gated",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": 403,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:15:45.014Z"
     }
   ],
   "totals": {
-    "refuse": 3,
-    "paid": 4,
-    "pay_failed": 4,
+    "refuse": 6,
+    "paid": 5,
+    "paid_settled": 4,
+    "mislabeled_paid": 1,
+    "pay_failed": 0,
+    "spend_gated": 2,
     "usdc_spent_sum": 0.04,
-    "signer_invocations_sum": 8
+    "signer_invocations_sum": 5
   }
 }

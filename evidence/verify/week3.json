@@ -1,0 +1,53 @@
+{
+  "schema": "twzrd.default_path_verify.week3.v1",
+  "lane": "VERIFY",
+  "rail": "monid-x402",
+  "path": "Default Path 1",
+  "path_statement": "every execution that can 402 does 402 and nothing signs until policy says so",
+  "gradedAt": "2026-09-12T17:59:21Z",
+  "grader": "same-session grade; did not claim an independent lane",
+  "spent": false,
+  "payment_header_sent": false,
+  "live_402": {
+    "method": "GET",
+    "url": "https://x402.monid.ai/v1/runs/01M29V98MXJJQM2R8VVV7RA4H7",
+    "http_status": 402,
+    "resource": "http://x402.monid.ai/x402/v1/runs/01M29V98MXJJQM2R8VVV7RA4H7",
+    "accepts": 0,
+    "siwx": true
+  },
+  "checks": [
+    {
+      "id": "live_get_retrieve_is_402",
+      "pass": true,
+      "detail": "GET x402.monid.ai/v1/runs/:id returned HTTP 402"
+    },
+    {
+      "id": "retrieve_accepts_empty",
+      "pass": true,
+      "detail": "accepts[] length 0 (SIWX is not a USDC offer)"
+    },
+    {
+      "id": "retrieve_siwx_extension",
+      "pass": true,
+      "detail": "PAYMENT-REQUIRED extensions include sign-in-with-x"
+    },
+    {
+      "id": "retrieve_no_payment_header",
+      "pass": true,
+      "detail": "no PAYMENT-SIGNATURE / payment header sent"
+    },
+    {
+      "id": "retrieve_refuse_zero_sign",
+      "pass": true,
+      "detail": "refuse siwx_no_pay_offer signer=0 usdc=0"
+    }
+  ],
+  "notes": [
+    "SIWX retrieve is identity, not USDC. Week 3 hold is refuse, not a second spend.",
+    "GET /v1/runs list stays 501 (prepaid list).",
+    "8787 left alone",
+    "tool-audit film not restaged"
+  ],
+  "verdict": "valid"
+}

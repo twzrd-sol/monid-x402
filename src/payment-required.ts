@@ -36,7 +36,7 @@ export function parsePaymentRequired(payload: unknown): PaymentRequired {
   if (!isRecord(payload.resource)) {
     throw new Error("Payment-Required omitted resource.");
   }
-  if (!Array.isArray(payload.accepts) || payload.accepts.length === 0) {
+  if (!Array.isArray(payload.accepts)) {
     throw new Error("Payment-Required omitted accepts[].");
   }
   return {

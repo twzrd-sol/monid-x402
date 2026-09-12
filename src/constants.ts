@@ -1,5 +1,6 @@
 /** Monid x402 execution host. Discover/inspect stay on api.monid.ai. */
 export const MONID_X402_RUN_URL = "https://x402.monid.ai/v1/run";
+export const MONID_X402_RUNS_URL = "https://x402.monid.ai/v1/runs";
 export const MONID_API_URL = "https://api.monid.ai/v1";
 
 /** Live payTo from 2026-09-12 probe of POST /v1/run. Same on Base and Monad. */

@@ -1,6 +1,6 @@
 import { createServer, type Server } from "node:http";
 import { readFile } from "node:fs/promises";
-import { extname, join, resolve, sep } from "node:path";
+import { extname, join, relative, resolve, sep } from "node:path";
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -10,15 +10,20 @@ const TYPES: Record<string, string> = {
 
 /** Resolve a URL path under `root`. Null if it escapes the root. */
 export function resolvePage(root: string, urlPath: string): string | null {
-  const rel = (urlPath.split("?")[0] ?? "/") === "/"
-    ? "index.html"
-    : (urlPath.split("?")[0] ?? "/").replace(/^\/+/, "");
+  const rel =
+    (urlPath.split("?")[0] ?? "/") === "/"
+      ? "index.html"
+      : (urlPath.split("?")[0] ?? "/").replace(/^\/+/, "");
   if (!rel || rel.includes("\0")) return null;
   const rootResolved = resolve(root);
   const full = resolve(rootResolved, rel);
+  const extra = relative(rootResolved, full);
+  if (extra.startsWith("..") || extra.split(sep).includes("..")) return null;
   if (full !== rootResolved && !full.startsWith(rootResolved + sep)) return null;
   return full;
 }
+
+export const safePagePath = resolvePage;
 
 export async function startFront(
   port: number,

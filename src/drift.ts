@@ -43,7 +43,10 @@ export function rowDrifted(
   pinnedNetworks: readonly string[] = PINNED_NETWORKS
 ): boolean {
   if (row.class !== "x402") return false;
-  return !payToPins(row.payTo, pinnedPayTo) || !networksPin(row.networks, pinnedNetworks);
+  const payTos = row.payTos?.length ? row.payTos : row.payTo ? [row.payTo] : [];
+  if (payTos.length === 0) return true;
+  if (payTos.some((payTo) => !payToPins(payTo, pinnedPayTo))) return true;
+  return !networksPin(row.networks, pinnedNetworks);
 }
 
 export function checkMatrix(matrix: CatalogMatrix): DriftReport {

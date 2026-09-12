@@ -22,6 +22,8 @@ test("classify records x402 from PAYMENT-REQUIRED", async () => {
   assert.equal(row.class, "x402");
   assert.equal(row.status, 402);
   assert.equal(row.payTo, "0x9D3d9410Be95fa1d230734B961997427fc61D837");
+  assert.ok(row.payTos?.includes("0x9D3d9410Be95fa1d230734B961997427fc61D837"));
+  assert.equal(row.payTos?.length, 2);
 });
 
 test("classify records 404 as not_found and never treats it as a seat", async () => {

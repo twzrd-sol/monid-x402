@@ -160,6 +160,18 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
         )
       };
     }
+    if (!paymentResponse) {
+      return {
+        kind: "failed",
+        receipt: payFailedReceipt(
+          target,
+          selected,
+          MONID_X402_RUN_URL,
+          `upstream HTTP ${response.status} after signer construct; missing PAYMENT-RESPONSE`,
+          "no_payment_response"
+        )
+      };
+    }
     return {
       kind: "paid",
       receipt: paidReceipt(target, selected, MONID_X402_RUN_URL, response.status, paymentResponse),

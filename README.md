@@ -39,6 +39,10 @@ npm run decision:listen
 npm run catalog:live
 npm run listen
 npm run front
+npm run doctor
+npm run index
+npm run verify
+npm run retrieve:live
 ```
 
 `refuse:live` hits the live 402, applies `--max-amount-micro 1`, and writes a
@@ -86,9 +90,10 @@ npm run catalog:live
 ```
 
 That POSTs each seed at the x402 host with no payment header and writes
-`evidence/catalog-matrix.json`. Catalog size is not adoption.
+`evidence/catalog-matrix.json` plus `evidence/catalog-drift.json`. Catalog
+size is not adoption.
 
-Week-0 listen (loopback, no wallet):
+Listen (loopback, no wallet):
 
 ```bash
 npm run listen
@@ -96,12 +101,14 @@ npm run listen
 export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
-`GET /health` reports `prepaid_run: false` and `twzrd_gate: "0.9.5"`.
-`GET /` is the operate desk (refuse vs confirm-spend). Confirm on listen
+`GET /health` reports the bound port, `prepaid_run: false`, and
+`twzrd_gate: "0.9.5"`. `GET /` is the operate desk. Confirm on listen
 is still 403 — no proxy wallet. Pay is CLI `pay --confirm-spend` only.
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse
 or `spend_gated` packet. It never calls prepaid `api.monid.ai/v1/run`.
-Discover/inspect forward only with the caller's `Authorization`.
+Fleet workers live in `fleet/` and POST only that URL. Discover/inspect
+forward only with the caller's `Authorization`. `--confirm-spend` requires a
+refuse packet already on disk.
 
 ## High-TA loop: company brief
 
@@ -126,3 +133,7 @@ node dist/cli.js pay --confirm-spend --max-amount-micro 10000 --url https://exam
 
 `pay` reads `PRIVATE_KEY` or `--key-file` / `EVM_PRIVATE_KEY_FILE` (JSON with
 `privateKey`). Do not commit a key. Front: `http://127.0.0.1:8790`.
+
+Retrieve is week 3. `GET /v1/runs/:id` 402s with empty `accepts[]` and SIWX.
+That is not a USDC offer. `retrieve` writes a refuse packet. Do not pass
+`--confirm-spend`. Listen `GET /v1/runs/:id` is the same hold.

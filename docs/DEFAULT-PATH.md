@@ -80,10 +80,10 @@ Pay stays gated unless `--confirm-spend` and a refuse packet already exist.
 
 ## Week 2 (honest grade)
 
-1. VERIFY: independent grader. Re-fetch one live 402. Check refuse + paid
-   packets. Write `evidence/verify/week2.json` only. Never edit `src/`.
-2. FILM: `pages/week12.html` + `pages/week12.json` from verify + ledger.
-   Never `tool-audit/pages/`.
+1. VERIFY: re-fetch one live 402. Check refuse + paid packets. Write
+   `evidence/verify/week2.json` only. Never edit `src/`. Solo grade is
+   same-session; do not claim an independent lane that does not exist.
+2. FILM: `tool-audit` already posted. Do not add another public film.
 
 Live after #1 + #2 landed on `main` (verified 2026-09-12):
 
@@ -93,13 +93,34 @@ Live after #1 + #2 landed on `main` (verified 2026-09-12):
 
 `31` x402 rows is inventory, not adoption. Leave `8787` alone.
 
-## Week 3 (wash seat, this tree)
+## Week 3 (SIWX retrieve + wash seat)
 
-1. Pin `twzrd-x402-gate@0.9.5` on the paying client only.
-2. Tighten: a 200 merchant_card with missing/partial/stale coverage is
+Live `GET https://x402.monid.ai/v1/runs/:id` returns HTTP 402 with
+`accepts: []` and a `sign-in-with-x` extension. That is identity, not a
+USDC offer. Policy refuses `siwx_no_pay_offer`. Signer stays 0.
+
+1. Parse empty `accepts[]` so the 402 can be graded instead of thrown away.
+2. CLI `retrieve` (no `--confirm-spend`) writes a refuse packet.
+3. Listen `GET /v1/runs/:id` probes the x402 host and returns that refuse.
+   `GET /v1/runs` list stays 501 (prepaid list).
+4. VERIFY writes `evidence/verify/week3.json`. Same-session grade only.
+5. Pin `twzrd-x402-gate@0.9.5` on the paying client only. A 200
+   merchant_card with missing/partial/stale coverage is
    `twzrd_wash_unknown` (0.9.5 itself treats unknown as allow).
-3. Listen stays no-wallet. `GET /` desk is operate, not a proxy wallet.
-4. `GET /health` names `twzrd_gate: "0.9.5"`.
+6. Listen stays no-wallet. `GET /` desk is operate, not a proxy wallet.
+7. `GET /health` names `twzrd_gate: "0.9.5"` and the bound port.
 
-Still later: proxy wallet, SIWX retrieve, Solana, a second partner,
-full coverage on the live Monid `payTo`.
+Do not sign SIWX. Confirm-spend does not unlock retrieve.
+
+## Week 4 (SKU)
+
+`vendor-prescreen` is the monetizable job. tool-audit was the prepaid
+beginning slice. This SKU is quote → 402 → pay → deliver on the live
+rail versus the frozen Vendorapp $149/mo snapshot. Quote never signs.
+Listen confirm is 403. `POST /v1/product/run` is the buyer envelope.
+Deliver is `review_required` when paid and `incomplete` when not.
+USDC settles to Monid `payTo`. TWZRD take-rate is 0.
+
+Still later: SIWX identity sign (only if policy ever sees a payable
+accept), proxy wallet, Solana, a second partner, full coverage on the
+live Monid `payTo`, a TWZRD take-rate.

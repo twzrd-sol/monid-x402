@@ -11,6 +11,13 @@ import type {
   X402Accept
 } from "./types.js";
 
+export class PaidReceiptError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PaidReceiptError";
+  }
+}
+
 function offerSlice(accept: X402Accept): OfferSlice {
   return {
     network: accept.network,
@@ -78,6 +85,12 @@ export function paidReceipt(
   paymentResponse: string | null,
   capturedAt = new Date().toISOString()
 ): PaidReceipt {
+  if (httpStatus < 200 || httpStatus >= 300) {
+    throw new PaidReceiptError(`paidReceipt requires HTTP 2xx, got ${httpStatus}`);
+  }
+  if (!paymentResponse) {
+    throw new PaidReceiptError("paidReceipt requires PAYMENT-RESPONSE");
+  }
   const proof = decodePaymentResponse(paymentResponse);
   return {
     schema: PAID_SCHEMA,

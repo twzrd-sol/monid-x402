@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test dist/*.test.js",
+    "test": "npm run build && node --test dist/*.test.js fleet/worker.test.mjs",
     "probe:live": "npm run build && node dist/cli.js probe",
     "refuse:live": "npm run build && node dist/cli.js refuse --max-amount-micro 1",
     "decision:live": "npm run build && node dist/cli.js decision",
@@ -22,7 +22,11 @@
     "listen": "npm run build && node dist/cli.js listen --port 8788",
     "front": "npm run build && node dist/cli.js front --port 8790",
     "brief": "npm run build && node dist/cli.js brief --domain canva.com",
-    "brief:pay": "npm run build && node dist/cli.js brief --domain canva.com --confirm-spend --max-amount-micro 10000"
+    "brief:pay": "npm run build && node dist/cli.js brief --domain canva.com --confirm-spend --max-amount-micro 10000",
+    "index": "npm run build && node dist/cli.js index",
+    "verify": "npm run build && node dist/cli.js verify",
+    "retrieve:live": "npm run build && node dist/cli.js retrieve",
+    "doctor": "npm run build && node dist/cli.js doctor"
   },
   "keywords": [
     "x402",
