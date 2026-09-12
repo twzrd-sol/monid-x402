@@ -43,6 +43,7 @@ npm run doctor
 npm run index
 npm run verify
 npm run retrieve:live
+npm run e2e:listen
 npm run quote:live
 ```
 
@@ -147,3 +148,9 @@ node dist/cli.js pay --confirm-spend --max-amount-micro 10000 --url https://exam
 Retrieve is week 3. `GET /v1/runs/:id` 402s with empty `accepts[]` and SIWX.
 That is not a USDC offer. `retrieve` writes a refuse packet. Do not pass
 `--confirm-spend`. Listen `GET /v1/runs/:id` is the same hold.
+
+Week 4 E2E: `npm run e2e:listen` walks health → refuse → spend_gated →
+confirm-still-gated → SIWX retrieve refuse → list 501 on 8788. Signer 0.
+
+Week 5: `retrieve --confirm-sign --key-file` signs SIWX and reads the run.
+That is identity, not a new USDC debit. Do not commit the key.

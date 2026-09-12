@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
 export const DEFAULT_BASE_URL = "http://127.0.0.1:8788";
+export const DEFAULT_RUN_ID = "01M2BC306GSMD00DZZAPNSCSAZ";
 export const DEFAULT_JOB = Object.freeze({
   provider: "context.dev",
   endpoint: "/web/scrape/markdown",
@@ -15,6 +16,11 @@ const SPEND_FLAGS = ["--confirm-spend", "--key-file", "--wallet"];
 export function resolveRunUrl(env = process.env) {
   const base = (env.MONID_API_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
   return `${base}/v1/run`;
+}
+
+export function resolveRetrieveUrl(env = process.env, runId = env.MONID_RUN_ID ?? DEFAULT_RUN_ID) {
+  const base = (env.MONID_API_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+  return `${base}/v1/runs/${runId}`;
 }
 
 export function assertNoSpendPath(argv = process.argv) {
@@ -63,10 +69,19 @@ export function assertRefusePacket(status, packet) {
   return rec;
 }
 
+export function assertSiwxRefuse(status, packet) {
+  const rec = assertRefusePacket(status, packet);
+  if (rec.code !== "siwx_no_pay_offer") {
+    throw new Error(`expected siwx_no_pay_offer, got ${String(rec.code)}`);
+  }
+  return rec;
+}
+
 export async function runWorker({
   fetchImpl = globalThis.fetch,
   env = process.env,
-  argv = process.argv
+  argv = process.argv,
+  runId = env.MONID_RUN_ID ?? DEFAULT_RUN_ID
 } = {}) {
   const { url, init } = buildRefuseRequest(env, argv);
   const response = await fetchImpl(url, init);
@@ -78,7 +93,24 @@ export async function runWorker({
     throw new Error(`refuse packet was not JSON (HTTP ${response.status})`);
   }
   assertRefusePacket(response.status, packet);
-  return { url, status: response.status, packet };
+
+  const retrieveUrl = resolveRetrieveUrl(env, runId);
+  const retrieveResponse = await fetchImpl(retrieveUrl, { method: "GET", headers: { accept: "application/json" } });
+  const retrieveText = await retrieveResponse.text();
+  let retrievePacket;
+  try {
+    retrievePacket = JSON.parse(retrieveText);
+  } catch {
+    throw new Error(`retrieve packet was not JSON (HTTP ${retrieveResponse.status})`);
+  }
+  assertSiwxRefuse(retrieveResponse.status, retrievePacket);
+
+  return {
+    url,
+    status: response.status,
+    packet,
+    retrieve: { url: retrieveUrl, status: retrieveResponse.status, packet: retrievePacket }
+  };
 }
 
 export async function main() {

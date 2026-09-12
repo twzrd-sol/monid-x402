@@ -54,11 +54,33 @@ test("doctor passes a healthy listen with refuse on disk and no key", async () =
     ledgerDir: dir,
     matrixPath,
     env: {},
-    fetchImpl: async () =>
-      new Response(
-        JSON.stringify({ ok: true, rail: "monid-x402", listen: "8788", prepaid_run: false }),
-        { status: 200, headers: { "content-type": "application/json" } }
-      )
+    fetchImpl: async (input) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.endsWith("/health")) {
+        return new Response(
+          JSON.stringify({ ok: true, rail: "monid-x402", listen: "8788", prepaid_run: false }),
+          { status: 200, headers: { "content-type": "application/json" } }
+        );
+      }
+      if (url.includes("/v1/runs/") && !url.endsWith("/v1/runs")) {
+        return new Response(
+          JSON.stringify({
+            schema: "twzrd.gate_eval_refuse.v1",
+            decision: "refuse",
+            code: "siwx_no_pay_offer",
+            signer_invocation_count: 0,
+            usdc_spent: 0
+          }),
+          { status: 402 }
+        );
+      }
+      if (url.endsWith("/v1/runs")) {
+        return new Response(JSON.stringify({ code: 501, message: "do not forward prepaid run list" }), {
+          status: 501
+        });
+      }
+      return new Response("nope", { status: 500 });
+    }
   });
   assert.equal(report.ok, true);
   assert.equal(report.listen, "8788");
@@ -67,4 +89,39 @@ test("doctor passes a healthy listen with refuse on disk and no key", async () =
   assert.ok(report.drift?.x402);
   assert.equal(PINNED_PAY_TO.startsWith("0x"), true);
   assert.equal(PINNED_NETWORKS.length, 2);
+});
+
+test("doctor fails when listen retrieve is still the prepaid 501 list", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "monid-doctor-"));
+  writeFileSync(
+    join(dir, "a-refuse.json"),
+    JSON.stringify({
+      decision: "refuse",
+      provider: "context.dev",
+      endpoint: "/web/scrape/markdown",
+      signer_invocation_count: 0,
+      usdc_spent: 0
+    })
+  );
+  const report = await doctor({
+    healthUrl: "http://127.0.0.1:8788/health",
+    ledgerDir: dir,
+    matrixPath,
+    env: {},
+    runId: "01M2BC306GSMD00DZZAPNSCSAZ",
+    fetchImpl: async (input) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.endsWith("/health")) {
+        return new Response(
+          JSON.stringify({ ok: true, rail: "monid-x402", listen: "8788", prepaid_run: false }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ code: 501, message: "do not forward prepaid run list" }), {
+        status: 501
+      });
+    }
+  });
+  assert.equal(report.ok, false);
+  assert.equal(report.checks.find((row) => row.id === "retrieve_siwx")?.pass, false);
 });

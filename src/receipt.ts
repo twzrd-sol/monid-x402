@@ -1,9 +1,17 @@
-import { PAID_SCHEMA, PAY_FAILED_SCHEMA, RAIL, REFUSE_SCHEMA, SPEND_GATED_SCHEMA } from "./constants.js";
+import {
+  PAID_SCHEMA,
+  PAY_FAILED_SCHEMA,
+  RAIL,
+  REFUSE_SCHEMA,
+  RETRIEVED_SCHEMA,
+  SPEND_GATED_SCHEMA
+} from "./constants.js";
 import { amountMicro, decodePaymentResponse, usdcFromMicro } from "./payment-required.js";
 import type {
   OfferSlice,
   PaidReceipt,
   PayFailedReceipt,
+  RetrievedReceipt,
   PolicyDecision,
   RefuseReceipt,
   RunTarget,
@@ -107,6 +115,35 @@ export function paidReceipt(
     network: proof?.network ?? selected.network,
     signer_invocation_count: 1,
     usdc_spent: usdcFromMicro(amountMicro(selected)),
+    capturedAt
+  };
+}
+
+export function retrievedReceipt(
+  target: RunTarget,
+  resourceUrl: string,
+  runId: string,
+  address: string,
+  network: string,
+  httpStatus: number,
+  capturedAt = new Date().toISOString()
+): RetrievedReceipt {
+  if (httpStatus < 200 || httpStatus >= 300) {
+    throw new PaidReceiptError(`retrievedReceipt requires HTTP 2xx, got ${httpStatus}`);
+  }
+  return {
+    schema: RETRIEVED_SCHEMA,
+    rail: RAIL,
+    resource: resourceUrl,
+    provider: target.provider,
+    endpoint: target.endpoint,
+    runId,
+    decision: "retrieved",
+    http_status: httpStatus,
+    address,
+    network,
+    signer_invocation_count: 1,
+    usdc_spent: 0,
     capturedAt
   };
 }

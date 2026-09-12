@@ -139,7 +139,8 @@ test("GET /health is 200 and does not fetch", async () => {
     prepaid_run: false,
     twzrd_gate: "0.9.5",
     desk: true,
-    sku: "vendor-prescreen"
+    sku: "vendor-prescreen",
+    listen_wallet: false
   });
   assert.equal(fetched, false);
 });

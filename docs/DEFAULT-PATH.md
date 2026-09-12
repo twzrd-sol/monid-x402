@@ -125,6 +125,32 @@ issues is not approval. Confirm-spend needs a refuse packet for the
 seat being paid, not all three seats first. USDC settles to Monid
 `payTo`. TWZRD take-rate is 0.
 
-Still later: SIWX identity sign (only if policy ever sees a payable
-accept), proxy wallet, Solana, a second partner, full coverage on the
-live Monid `payTo`, a TWZRD take-rate.
+## Week 4 (listen E2E door)
+
+The week-3 routes worked by hand. Other agents had no single command that
+proved the whole 8788 walk, and doctor/fleet only checked POST /v1/run.
+
+1. `proveListenE2E` / `npm run e2e:listen`: health, over_cap refuse,
+   spend_gated, confirm-still-gated, SIWX retrieve refuse, list 501.
+   Signer 0. Not 8787. Not prepaid.
+2. `doctor` fails if retrieve is still 501.
+3. Fleet worker POSTs refuse then GETs retrieve. No spend path.
+
+No new film. No proxy wallet. No extra spend.
+
+## Week 5 (SIWX sign + retrieve)
+
+Operator lifted the identity-sign hold. Unauthenticated GET still refuses
+`siwx_no_pay_offer`. Confirmed retrieve signs CAIP-122 / EIP-191 and sends
+`SIGN-IN-WITH-X`. That is not a USDC pay (`usdc_spent: 0`, signer 1).
+
+```bash
+node dist/cli.js retrieve --confirm-sign --run-id <ULID> --key-file <evm.json>
+```
+
+`--confirm-spend` also unlocks retrieve sign. Listen stays refuse-only
+unless `MONID_LISTEN_PRIVATE_KEY` is set and the caller sends
+`X-TWZRD-Confirm-Sign`. Fleet/e2e/doctor still prove the unsigned door.
+
+Still later: default listen wallet, Solana, a second partner, full
+coverage on the live Monid `payTo`, a TWZRD take-rate.

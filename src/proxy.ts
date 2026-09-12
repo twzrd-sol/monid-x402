@@ -14,7 +14,7 @@ import {
 } from "./product.js";
 import { probeRun402 } from "./probe.js";
 import { refuseReceipt, spendGatedReceipt } from "./receipt.js";
-import { parseRunsPath, probeRetrieve402, retrieveRefuse } from "./retrieve.js";
+import { parseRunsPath, probeRetrieve402, retrieveRefuse, retrieveSigned } from "./retrieve.js";
 import type { RunTarget } from "./types.js";
 
 export const PREPAID_RUN_URL = `${MONID_API_URL}/run`;
@@ -24,6 +24,7 @@ export type ProxyHeaders = Record<string, string | string[] | undefined>;
 export type ProxyOptions = {
   listenPort?: number;
   ledgerDir?: string;
+  listenPrivateKey?: `0x${string}`;
 };
 
 function readJson(req: IncomingMessage): Promise<unknown> {
@@ -60,6 +61,11 @@ function header(headers: ProxyHeaders, name: string): string | undefined {
 function confirmSpend(headers: ProxyHeaders): boolean {
   const raw = header(headers, "x-twzrd-confirm-spend");
   return raw === "true" || raw === "1";
+}
+
+function confirmSign(headers: ProxyHeaders): boolean {
+  const raw = header(headers, "x-twzrd-confirm-sign");
+  return raw === "true" || raw === "1" || confirmSpend(headers);
 }
 
 function maxAmountMicro(headers: ProxyHeaders): bigint {
@@ -138,7 +144,8 @@ export async function handleProxyRequest(
         prepaid_run: false,
         twzrd_gate: TWZRD_GATE_PIN,
         desk: true,
-        sku: PRODUCT_SKU
+        sku: PRODUCT_SKU,
+        listen_wallet: Boolean(options.listenPrivateKey)
       }
     };
   }
@@ -150,6 +157,19 @@ export async function handleProxyRequest(
     }
     if (parsed.kind === "bad") {
       return { status: 400, body: { code: 400, message: "invalid run id" } };
+    }
+    if (confirmSign(headers) && options.listenPrivateKey) {
+      const result = await retrieveSigned({
+        runId: parsed.runId,
+        confirmSign: true,
+        privateKey: options.listenPrivateKey,
+        fetchImpl: guardedFetch(fetchImpl)
+      });
+      return ledgered(
+        result.kind === "retrieved" ? result.receipt.http_status : 402,
+        result.receipt,
+        options.ledgerDir
+      );
     }
     const probe = await probeRetrieve402(parsed.runId, guardedFetch(fetchImpl));
     return ledgered(402, retrieveRefuse(probe), options.ledgerDir);
@@ -290,7 +310,10 @@ export function startProxy(port = 0): Promise<{ server: Server; port: number }> 
           globalThis.fetch,
           {
             listenPort: bound.port,
-            ledgerDir: process.env.MONID_LEDGER_DIR ?? "evidence/ledger"
+            ledgerDir: process.env.MONID_LEDGER_DIR ?? "evidence/ledger",
+            listenPrivateKey: process.env.MONID_LISTEN_PRIVATE_KEY?.startsWith("0x")
+              ? (process.env.MONID_LISTEN_PRIVATE_KEY as `0x${string}`)
+              : undefined
           }
         );
         send(res, result.status, result.body);

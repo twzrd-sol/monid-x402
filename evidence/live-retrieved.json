@@ -1,0 +1,14 @@
+{
+  "schema": "twzrd.gate_eval_retrieved.v1",
+  "rail": "monid-x402",
+  "resource": "https://x402.monid.ai/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+  "runId": "01M2BC306GSMD00DZZAPNSCSAZ",
+  "decision": "retrieved",
+  "http_status": 200,
+  "address": "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F",
+  "network": "eip155:8453",
+  "signer_invocation_count": 1,
+  "usdc_spent": 0,
+  "capturedAt": "2026-09-12T18:11:23.909Z",
+  "output_title": "Example Domain"
+}

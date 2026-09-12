@@ -18,7 +18,8 @@ import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
-import { probeRetrieve402, retrieveRefuse } from "./retrieve.js";
+import { DEFAULT_E2E_RUN_ID, proveListenE2E, writeWeek4 } from "./e2e.js";
+import { probeRetrieve402, retrieveRefuse, retrieveSigned } from "./retrieve.js";
 import { gradeDefaultPath, gradeWeek3 } from "./verify.js";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -333,6 +334,16 @@ function indexLedger() {
   console.log(JSON.stringify({ dir, totals: report.totals }, null, 2));
 }
 
+async function e2e() {
+  const proof = await proveListenE2E({
+    baseUrl: arg("--base", process.env.MONID_API_BASE_URL ?? "http://127.0.0.1:8788"),
+    runId: arg("--run-id") ?? DEFAULT_E2E_RUN_ID
+  });
+  const out = writeWeek4(process.cwd(), proof);
+  writeFileSync("evidence/live-e2e.json", `${JSON.stringify(proof, null, 2)}\n`);
+  console.log(JSON.stringify({ out, proof }, null, 2));
+}
+
 function defaultRunId(): string {
   const fromArg = arg("--run-id");
   if (fromArg) return fromArg;
@@ -349,12 +360,18 @@ function defaultRunId(): string {
 }
 
 async function retrieve() {
-  if (flag("--confirm-spend")) {
-    throw new PayGatedError(
-      "Retrieve SIWX is not a USDC pay. Confirm-spend does not sign identity. Refuse is the week-3 hold."
-    );
-  }
   const runId = defaultRunId();
+  if (flag("--confirm-sign") || flag("--confirm-spend")) {
+    const result = await retrieveSigned({
+      runId,
+      confirmSign: true,
+      privateKey: loadPrivateKey()
+    });
+    const out = writePacket(result.receipt);
+    console.log(JSON.stringify({ out, ...result }, null, 2));
+    if (result.kind !== "retrieved") process.exitCode = 2;
+    return;
+  }
   const probe = await probeRetrieve402(runId);
   const receipt = retrieveRefuse(probe);
   const out = writePacket(receipt);
@@ -417,10 +434,11 @@ async function main() {
   if (command === "product") return product();
   if (command === "index") return indexLedger();
   if (command === "retrieve") return retrieve();
+  if (command === "e2e") return e2e();
   if (command === "verify") return verify();
   if (command === "doctor") return doctorCmd();
   console.error(
-    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|listen|front|brief|product|index|verify|doctor>"
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|e2e|listen|front|brief|product|index|verify|doctor>"
   );
   process.exitCode = 2;
 }

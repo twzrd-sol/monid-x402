@@ -55,12 +55,20 @@ settled paid (HTTP 200 + PAYMENT-RESPONSE).
 Write: `fleet/` only. Isolated workers. No shared key. Do not edit PROXY
 while the listen is running.
 
+## E2E (week 4)
+
+Write: `src/e2e.ts`. Job: one walk of the 8788 door. `npm run e2e:listen`
+writes `evidence/verify/week4.json`. Doctor and fleet must cover retrieve,
+not only POST /v1/run. No spend. Leave 8787 alone.
+
 ## RETRIEVE (week 3)
 
 Write: `src/retrieve.ts`. Job: `GET https://x402.monid.ai/v1/runs/:id` with
 no payment header. Live 402 has empty `accepts[]` plus SIWX. Refuse
-`siwx_no_pay_offer`. Do not sign. `--confirm-spend` is rejected. Listen
-`GET /v1/runs/:id` is the same refuse. `GET /v1/runs` list stays 501.
+`siwx_no_pay_offer`. Confirmed retrieve (`--confirm-sign` or
+`--confirm-spend` plus a key) signs SIWX and GETs the run. Listen signs
+only when `MONID_LISTEN_PRIVATE_KEY` is set and
+`X-TWZRD-Confirm-Sign` is true. `GET /v1/runs` list stays 501.
 
 ## VERIFY
 
