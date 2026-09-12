@@ -14,7 +14,12 @@ Public week-1-2 film: https://twzrd-sol.github.io/monid-x402/week12.json
 
 ```bash
 export MONID_API_BASE_URL=http://127.0.0.1:8788
+npm run decision:listen
 ```
+
+`decision:listen` POSTs `$MONID_API_BASE_URL/v1/run` and exits 0 only on
+402 `over_cap` signer 0. It never sends a wallet or `--confirm-spend`.
+See [`docs/LISTEN-DECISION.md`](LISTEN-DECISION.md).
 
 `127.0.0.1:8787` is a stale `node dist/server.js` (pid 915170, cwd deleted)
 that 302s `/` to the tool-audit GitHub Pages film. Leave it alone. Do not
