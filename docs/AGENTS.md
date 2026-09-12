@@ -50,6 +50,12 @@ settled paid (HTTP 200 + PAYMENT-RESPONSE).
 Write: `fleet/` only. Isolated workers. No shared key. Do not edit PROXY
 while the listen is running.
 
+## E2E (week 4)
+
+Write: `src/e2e.ts`. Job: one walk of the 8788 door. `npm run e2e:listen`
+writes `evidence/verify/week4.json`. Doctor and fleet must cover retrieve,
+not only POST /v1/run. No spend. Leave 8787 alone.
+
 ## RETRIEVE (week 3)
 
 Write: `src/retrieve.ts`. Job: `GET https://x402.monid.ai/v1/runs/:id` with

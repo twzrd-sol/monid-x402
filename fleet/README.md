@@ -3,9 +3,9 @@
 Isolated Default Path client. This directory does not share a key, does not
 sign, and does not bind a listen port.
 
-`POST` goes only to `MONID_API_BASE_URL + "/v1/run"`.
-Unset base is `http://127.0.0.1:8788`, so the default URL is
-`http://127.0.0.1:8788/v1/run`.
+`POST` goes only to `MONID_API_BASE_URL + "/v1/run"`, then `GET`
+`/v1/runs/:id` for the SIWX retrieve refuse. Unset base is
+`http://127.0.0.1:8788`.
 
 Default job (no payment header):
 
@@ -13,8 +13,8 @@ Default job (no payment header):
 { "provider": "context.dev", "endpoint": "/web/scrape/markdown", "input": {} }
 ```
 
-Expected response: HTTP 402 packet `twzrd.gate_eval_refuse.v1` with
-`signer_invocation_count: 0` and `usdc_spent: 0`.
+Expected: HTTP 402 `over_cap` on run, then HTTP 402 `siwx_no_pay_offer`
+on retrieve. Both `signer_invocation_count: 0` and `usdc_spent: 0`.
 
 ## Run
 

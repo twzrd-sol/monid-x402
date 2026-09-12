@@ -33,10 +33,26 @@ function refusePacket() {
   };
 }
 
+function siwxPacket() {
+  return {
+    schema: REFUSE_SCHEMA,
+    decision: "refuse",
+    code: "siwx_no_pay_offer",
+    signer_invocation_count: 0,
+    usdc_spent: 0
+  };
+}
+
 function mockRefuseFetch(seen) {
   return async (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     seen.push({ url, init });
+    if (String(url).includes("/v1/runs/")) {
+      return new Response(JSON.stringify(siwxPacket()), {
+        status: 402,
+        headers: { "content-type": "application/json" }
+      });
+    }
     return new Response(JSON.stringify(refusePacket()), {
       status: 402,
       headers: { "content-type": "application/json" }
@@ -106,14 +122,16 @@ test("mock fetch posts only to default 8788 run URL and never prepaid", async ()
   const result = await runWorker({ fetchImpl: mockRefuseFetch(seen), env: {} });
   assert.equal(result.status, 402);
   assert.equal(result.url, "http://127.0.0.1:8788/v1/run");
-  assert.equal(seen.length, 1);
+  assert.equal(seen.length, 2);
   assert.equal(seen[0].url, "http://127.0.0.1:8788/v1/run");
   assert.equal(seen[0].init.method, "POST");
   assert.deepEqual(JSON.parse(seen[0].init.body), DEFAULT_JOB);
   assert.deepEqual(paymentHeaderNames(seen[0].init.headers), []);
+  assert.equal(seen[1].url, "http://127.0.0.1:8788/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ");
   assert.equal(result.packet.schema, REFUSE_SCHEMA);
   assert.equal(result.packet.signer_invocation_count, 0);
   assert.equal(result.packet.usdc_spent, 0);
+  assert.equal(result.retrieve.packet.code, "siwx_no_pay_offer");
   assert.ok(!seen.some((row) => row.url === PREPAID_RUN_URL));
   assert.ok(!seen.some((row) => String(row.url).includes("api.monid.ai")));
 });
@@ -141,8 +159,9 @@ test("mock server on an ephemeral port is the env base, not 8787 or 8788", async
         headers: req.headers,
         body: Buffer.concat(chunks).toString("utf8")
       });
+      const packet = String(req.url).startsWith("/v1/runs/") ? siwxPacket() : refusePacket();
       res.writeHead(402, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(refusePacket()));
+      res.end(JSON.stringify(packet));
     });
   });
 
@@ -158,9 +177,11 @@ test("mock server on an ephemeral port is the env base, not 8787 or 8788", async
     assert.equal(result.status, 402);
     assert.equal(result.url, `http://127.0.0.1:${addr.port}/v1/run`);
     assert.notEqual(result.url, PREPAID_RUN_URL);
-    assert.equal(hits.length, 1);
+    assert.equal(hits.length, 2);
     assert.equal(hits[0].method, "POST");
     assert.equal(hits[0].url, "/v1/run");
+    assert.equal(hits[1].method, "GET");
+    assert.equal(hits[1].url, "/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ");
     assert.equal(hits[0].headers.authorization, undefined);
     assert.equal(hits[0].headers["x-twzrd-confirm-spend"], undefined);
     assert.equal(hits[0].headers["payment-signature"], undefined);
@@ -173,6 +194,36 @@ test("mock server on an ephemeral port is the env base, not 8787 or 8788", async
       server.close((error) => (error ? reject(error) : resolve()));
     });
   }
+});
+
+test("worker also GETs retrieve and refuses SIWX without a signer", async () => {
+  const seen = [];
+  const result = await runWorker({
+    env: {},
+    runId: "01M2BC306GSMD00DZZAPNSCSAZ",
+    fetchImpl: async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      seen.push({ url, method: init?.method ?? "GET" });
+      if (url.endsWith("/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ")) {
+        return new Response(
+          JSON.stringify({
+            schema: REFUSE_SCHEMA,
+            decision: "refuse",
+            code: "siwx_no_pay_offer",
+            signer_invocation_count: 0,
+            usdc_spent: 0
+          }),
+          { status: 402 }
+        );
+      }
+      return new Response(JSON.stringify(refusePacket()), { status: 402 });
+    }
+  });
+  assert.equal(result.retrieve.status, 402);
+  assert.equal(result.retrieve.packet.code, "siwx_no_pay_offer");
+  assert.equal(result.retrieve.packet.signer_invocation_count, 0);
+  assert.ok(seen.some((row) => row.url === "http://127.0.0.1:8788/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ"));
+  assert.ok(!seen.some((row) => String(row.url).includes("api.monid.ai")));
 });
 
 test("non-402 or prepaid-looking packet fails closed", async () => {

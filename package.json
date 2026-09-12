@@ -26,6 +26,7 @@
     "index": "npm run build && node dist/cli.js index",
     "verify": "npm run build && node dist/cli.js verify",
     "retrieve:live": "npm run build && node dist/cli.js retrieve",
+    "e2e:listen": "npm run build && node dist/cli.js e2e --base http://127.0.0.1:8788",
     "doctor": "npm run build && node dist/cli.js doctor"
   },
   "keywords": [
