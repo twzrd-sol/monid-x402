@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>monid-x402 — company brief</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: #0a0d14;
+      --ink: #e9e6dc;
+      --ink-soft: #a8a69c;
+      --ink-muted: #6f6c62;
+      --rule: #252a36;
+      --accent: #d99a3a;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Instrument Sans", sans-serif; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 20px 72px; }
+    .kicker { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+    h1 { font-family: "Bricolage Grotesque", sans-serif; font-size: clamp(28px, 6vw, 42px); line-height: 1.1; }
+    p { color: var(--ink-soft); max-width: 64ch; }
+    a { color: var(--ink); }
+    pre { background: var(--surface); border: 1px solid var(--rule); padding: 16px; overflow: auto; font-family: "JetBrains Mono", monospace; font-size: 12px; }
+    .note { color: var(--ink-muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker">high-TA loop · company brief · not a catalog dump</p>
+    <h1>Resolve the company, then read the homepage.</h1>
+    <p>Akta search is free on prepaid Monid and 404 on the x402 host. The live paid path is <code>context.dev /brand/retrieve</code> then <code>/web/scrape/markdown</code>. Every sales or research agent needs this join key. Seed count is not adoption.</p>
+    <p><a href="./">Paid receipt</a> · listen <code>127.0.0.1:8788</code></p>
+    <p class="note" id="sum">loading brief.json</p>
+    <pre id="packet">{}</pre>
+  </main>
+  <script>
+    fetch("./brief.json", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        document.getElementById("sum").textContent =
+          (d.domain || "") + " · $" + String(d.usdc_spent ?? 0) + " · " + (d.brand && d.brand.title ? d.brand.title : "");
+        document.getElementById("packet").textContent = JSON.stringify(d, null, 2);
+      })
+      .catch(() => {
+        document.getElementById("sum").textContent = "missing brief.json";
+      });
+  </script>
+</body>
+</html>

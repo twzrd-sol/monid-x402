@@ -36,6 +36,7 @@ npm run probe:live
 npm run refuse:live
 npm run catalog:live
 npm run listen
+npm run front
 ```
 
 `refuse:live` hits the live 402, applies `--max-amount-micro 1`, and writes a
@@ -71,3 +72,27 @@ export MONID_API_BASE_URL=http://127.0.0.1:8788
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse
 or `spend_gated` packet. It never calls prepaid `api.monid.ai/v1/run`.
 Discover/inspect forward only with the caller's `Authorization`.
+
+## High-TA loop: company brief
+
+Akta company search is 404 on the x402 host. The live buyer job is resolve a
+domain (`context.dev /brand/retrieve`) then read the homepage
+(`/web/scrape/markdown`). That is the join key every research/sales agent needs.
+
+```bash
+npm run brief
+npm run brief:pay   # --confirm-spend; needs PRIVATE_KEY or --key-file
+```
+
+Front: `http://127.0.0.1:8790/brief.html`. Production pages deploy from `pages/`.
+
+Pay (after a refuse packet exists):
+
+```bash
+npm run build
+node dist/cli.js refuse --max-amount-micro 1
+node dist/cli.js pay --confirm-spend --max-amount-micro 10000 --url https://example.com
+```
+
+`pay` reads `PRIVATE_KEY` or `--key-file` / `EVM_PRIVATE_KEY_FILE` (JSON with
+`privateKey`). Do not commit a key. Front: `http://127.0.0.1:8790`.

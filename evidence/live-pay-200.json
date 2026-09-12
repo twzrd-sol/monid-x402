@@ -1,0 +1,19 @@
+{
+  "schema": "twzrd.gate_eval_paid.v1",
+  "rail": "monid-x402",
+  "runId": "01M29V98MXJJQM2R8VVV7RA4H7",
+  "http_status": 200,
+  "usdc_spent": 0.01,
+  "signer_invocation_count": 1,
+  "payer": "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F",
+  "transaction": "0x4a87dcf19dfc90a095ea467f7f2e155427e981183a4086efde4c75767df4517e",
+  "network": "eip155:8453",
+  "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+  "provider": "context.dev",
+  "endpoint": "/web/scrape/markdown",
+  "input": { "queryParams": { "url": "https://example.com" } },
+  "block": "51197570",
+  "receiver_usdc_after_micro": "2385000",
+  "capturedAt": "2026-09-12T03:41:26.373Z"
+}

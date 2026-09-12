@@ -1,13 +1,14 @@
 # Lane contract
 
-Work in `/home/twzrd/monid-x402`. Do not edit `/home/twzrd/tool-audit`.
-Do not edit wzrd-final serve trees. Do not spend USDC.
+Work in a `monid-x402` worktree. Do not edit `/home/twzrd/tool-audit`.
+Do not edit wzrd-final serve trees. Do not invent or commit a key.
+Spend only with `--confirm-spend` after a refuse packet is on disk.
 
 One agent per lane. If you need a file another lane owns, stop.
 
 ## Listen (week 0, f4d5bdf)
 
-Default Path proxy is loopback **8788** only. Pay did not run.
+Default Path proxy is loopback **8788** only. Front is loopback **8790**.
 
 ```bash
 export MONID_API_BASE_URL=http://127.0.0.1:8788
@@ -38,4 +39,4 @@ Read only. Re-fetch a 402. Check packet fields. Output valid / not 1.
 
 ## FILM
 
-New pages only. Never `tool-audit/pages/`.
+Write: `pages/` in this repo only. Never `tool-audit/pages/`.

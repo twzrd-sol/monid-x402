@@ -1,0 +1,74 @@
+{
+  "schema": "twzrd.company_brief.v1",
+  "rail": "monid-x402",
+  "opportunity": "company-brief",
+  "domain": "canva.com",
+  "confirmSpend": true,
+  "usdc_spent": 0.02,
+  "why": "Highest-frequency agent job on this catalog: resolve a company from a domain, then read the homepage. Akta search is 404 on the x402 host.",
+  "brand": {
+    "title": "Canva",
+    "domain": "canva.com",
+    "slogan": "Make AI-powered designs for social posts, videos, and more with Canva.",
+    "employees_exact": 18684,
+    "industries": [
+      "Software (B2C)",
+      "Software (B2B)",
+      "Artificial Intelligence & Machine Learning"
+    ],
+    "runId": "01M29VGA19K8QPZ4RBHRYMPVQN",
+    "receipt": {
+      "schema": "twzrd.gate_eval_paid.v1",
+      "rail": "monid-x402",
+      "resource": "https://x402.monid.ai/v1/run",
+      "provider": "context.dev",
+      "endpoint": "/brand/retrieve",
+      "selected": {
+        "network": "eip155:8453",
+        "amount": "10000",
+        "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      },
+      "decision": "paid",
+      "http_status": 200,
+      "payment_response": "eyJzdWNjZXNzIjp0cnVlLCJwYXllciI6IjB4MTRkZjc3MkJENDk2YkJiN2Y0OUJjM0U5OTJDZTEzQjJjNDQxMTc3RiIsInRyYW5zYWN0aW9uIjoiMHgyMGZhYjk0N2VjYmE3NWFjMDEwNmJiZTcwMWY0ODM5MWM1MjZmZjVmMjU0MDBkZDQ5MDdhODZmOWYxMTJjMWU0IiwibmV0d29yayI6ImVpcDE1NTo4NDUzIn0=",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "capturedAt": "2026-09-12T03:45:17.296Z"
+    },
+    "payment": {
+      "success": true,
+      "payer": "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F",
+      "transaction": "0x20fab947ecba75ac0106bbe701f48391c526ff5f25400dd4907a86f9f112c1e4",
+      "network": "eip155:8453"
+    }
+  },
+  "homepage": {
+    "url": "https://canva.com",
+    "receipt": {
+      "schema": "twzrd.gate_eval_paid.v1",
+      "rail": "monid-x402",
+      "resource": "https://x402.monid.ai/v1/run",
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "selected": {
+        "network": "eip155:8453",
+        "amount": "10000",
+        "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      },
+      "decision": "paid",
+      "http_status": 200,
+      "payment_response": "eyJzdWNjZXNzIjp0cnVlLCJwYXllciI6IjB4MTRkZjc3MkJENDk2YkJiN2Y0OUJjM0U5OTJDZTEzQjJjNDQxMTc3RiIsInRyYW5zYWN0aW9uIjoiMHgxNWVmN2M1ZThjZDY2MWNjNjI0MTU4N2Q2NjM1MjczMjk3ZTM0OTEzMDcwZWU0MWRlMGQ5MjQwNGM4NGY4ODhhIiwibmV0d29yayI6ImVpcDE1NTo4NDUzIn0=",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "capturedAt": "2026-09-12T03:45:07.262Z"
+    },
+    "payment": {
+      "success": true,
+      "payer": "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F",
+      "transaction": "0x15ef7c5e8cd661cc6241587d6635273297e34913070ee41de0d92404c84f888a",
+      "network": "eip155:8453"
+    }
+  }
+}

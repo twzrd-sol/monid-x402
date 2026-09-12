@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { companyBriefPlan } from "./brief.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
 import { inspectEndpoint } from "./inspect.js";
+import { appendLedger } from "./ledger.js";
 import { PayGatedError, payRun } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
@@ -20,12 +22,47 @@ function flag(name: string): boolean {
   return process.argv.includes(name);
 }
 
+function parseInput(): Record<string, unknown> {
+  const raw = arg("--input");
+  if (!raw) {
+    const url = arg("--url");
+    return url ? { queryParams: { url } } : {};
+  }
+  const parsed = JSON.parse(raw) as unknown;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("--input must be a JSON object");
+  }
+  return parsed as Record<string, unknown>;
+}
+
 function targetFromArgs() {
   return defaultTarget({
     provider: arg("--provider", DEFAULT_PROVIDER)!,
     endpoint: arg("--endpoint", DEFAULT_ENDPOINT)!,
-    input: {}
+    input: parseInput()
   });
+}
+
+function loadPrivateKey(): `0x${string}` {
+  const envKey = process.env.PRIVATE_KEY;
+  if (envKey?.startsWith("0x")) return envKey as `0x${string}`;
+  const file = arg("--key-file", process.env.EVM_PRIVATE_KEY_FILE);
+  if (!file) {
+    throw new PayGatedError("PRIVATE_KEY or --key-file / EVM_PRIVATE_KEY_FILE is required. Do not commit it.");
+  }
+  const raw = JSON.parse(readFileSync(file, "utf8")) as { privateKey?: string };
+  if (!raw.privateKey?.startsWith("0x")) {
+    throw new PayGatedError("key file must contain a 0x privateKey field");
+  }
+  return raw.privateKey as `0x${string}`;
+}
+
+function writePacket(packet: { decision: string }): string {
+  const out = arg("--out");
+  const path = out ?? appendLedger("evidence/ledger", packet);
+  if (out) writeFileSync(path, `${JSON.stringify(packet, null, 2)}\n`);
+  writeFileSync("pages/data.json", `${JSON.stringify(packet, null, 2)}\n`);
+  return path;
 }
 
 async function probe() {
@@ -73,9 +110,8 @@ async function refuse() {
     throw new Error(`Expected refuse under cap ${maxAmountMicro}, got allow.`);
   }
   const receipt = refuseReceipt(target, verdict, MONID_X402_RUN_URL);
-  const out = arg("--out");
-  if (out) writeFileSync(out, `${JSON.stringify(receipt, null, 2)}\n`);
-  console.log(JSON.stringify(receipt, null, 2));
+  const out = writePacket(receipt);
+  console.log(JSON.stringify({ out, receipt }, null, 2));
   if (receipt.signer_invocation_count !== 0 || receipt.usdc_spent !== 0) {
     process.exitCode = 2;
   }
@@ -84,22 +120,75 @@ async function refuse() {
 async function pay() {
   if (!flag("--confirm-spend")) {
     throw new PayGatedError(
-      "Pay is gated. Refuse is the default. Re-run with --confirm-spend and PRIVATE_KEY after a refuse receipt exists."
+      "Pay is gated. Refuse is the default. Re-run with --confirm-spend and a key after a refuse receipt exists."
     );
-  }
-  const key = process.env.PRIVATE_KEY;
-  if (!key?.startsWith("0x")) {
-    throw new PayGatedError("PRIVATE_KEY is required for pay. Do not commit it.");
   }
   const maxAmountMicro = BigInt(arg("--max-amount-micro", "10000")!);
   const result = await payRun({
     confirmSpend: true,
-    privateKey: key as `0x${string}`,
+    privateKey: loadPrivateKey(),
     policy: defaultPolicy({ maxAmountMicro }),
     target: targetFromArgs()
   });
-  console.log(JSON.stringify(result, null, 2));
-  if (result.kind === "refused") process.exitCode = 2;
+  const out = writePacket(result.receipt);
+  console.log(JSON.stringify({ out, ...result }, null, 2));
+  if (result.kind !== "paid") process.exitCode = 2;
+}
+
+async function brief() {
+  const domain = arg("--domain", "canva.com")!;
+  const plan = companyBriefPlan(domain);
+  const maxRefuse = BigInt(arg("--refuse-cap-micro", "1")!);
+  const maxPay = BigInt(arg("--max-amount-micro", "10000")!);
+  const steps = [];
+  for (const step of plan.steps) {
+    if (!flag("--confirm-spend")) {
+      const probe = await probeRun402(step.target);
+      const verdict = evaluatePaymentRequired(
+        probe.paymentRequired,
+        defaultPolicy({ maxAmountMicro: maxRefuse })
+      );
+      if (verdict.decision !== "refuse") {
+        throw new Error(`brief ${step.role} expected refuse under cap ${maxRefuse}`);
+      }
+      const receipt = refuseReceipt(step.target, verdict, MONID_X402_RUN_URL);
+      writePacket(receipt);
+      steps.push({ role: step.role, why: step.why, target: step.target, kind: "refused", receipt });
+      continue;
+    }
+    const result = await payRun({
+      confirmSpend: true,
+      privateKey: loadPrivateKey(),
+      policy: defaultPolicy({ maxAmountMicro: maxPay }),
+      target: step.target
+    });
+    writePacket(result.receipt);
+    steps.push({
+      role: step.role,
+      why: step.why,
+      target: step.target,
+      kind: result.kind,
+      receipt: result.receipt,
+      ...(result.kind === "paid" ? { body: result.body } : {})
+    });
+    if (result.kind !== "paid") process.exitCode = 2;
+  }
+  const spent = steps.reduce((sum, row) => {
+    const receipt = row.receipt as { usdc_spent?: number };
+    return sum + (typeof receipt.usdc_spent === "number" ? receipt.usdc_spent : 0);
+  }, 0);
+  const packet = {
+    schema: "twzrd.company_brief.v1",
+    rail: "monid-x402",
+    opportunity: "company-brief",
+    domain: plan.domain,
+    confirmSpend: flag("--confirm-spend"),
+    usdc_spent: spent,
+    steps
+  };
+  writeFileSync("pages/brief.json", `${JSON.stringify(packet, null, 2)}\n`);
+  writeFileSync("evidence/live-brief.json", `${JSON.stringify(packet, null, 2)}\n`);
+  console.log(JSON.stringify(packet, null, 2));
 }
 
 async function catalog() {
@@ -131,7 +220,36 @@ async function listen() {
   const base = `http://127.0.0.1:${bound}`;
   console.error(`monid-x402 proxy ${base}`);
   console.error(`MONID_API_BASE_URL=${base}`);
-  console.error("Week 0: POST /v1/run → x402 + refuse/spend_gated. No wallet.");
+  console.error("POST /v1/run → x402 + refuse/spend_gated. Week 0 proxy has no wallet.");
+}
+
+async function front() {
+  const { createServer } = await import("node:http");
+  const { readFile } = await import("node:fs/promises");
+  const { extname, join } = await import("node:path");
+  const port = Number(arg("--port", "8790"));
+  const root = join(process.cwd(), "pages");
+  const types: Record<string, string> = {
+    ".html": "text/html; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".css": "text/css; charset=utf-8"
+  };
+  const server = createServer(async (req, res) => {
+    const urlPath = req.url?.split("?")[0] ?? "/";
+    const rel = urlPath === "/" ? "index.html" : urlPath.replace(/^\/+/, "");
+    try {
+      const body = await readFile(join(root, rel));
+      res.writeHead(200, { "Content-Type": types[extname(rel)] ?? "application/octet-stream" });
+      res.end(body);
+    } catch {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ code: 404, message: `no page ${urlPath}` }));
+    }
+  });
+  await new Promise<void>((resolve) => {
+    server.listen(port, "127.0.0.1", () => resolve());
+  });
+  console.error(`monid-x402 front http://127.0.0.1:${port}`);
 }
 
 async function main() {
@@ -141,7 +259,9 @@ async function main() {
   if (command === "pay") return pay();
   if (command === "catalog") return catalog();
   if (command === "listen") return listen();
-  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen> [--provider context.dev] [--endpoint /web/scrape/markdown]");
+  if (command === "front") return front();
+  if (command === "brief") return brief();
+  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen|front|brief>");
   process.exitCode = 2;
 }
 

@@ -1,0 +1,19 @@
+{
+  "schema": "twzrd.gate_eval_paid.v1",
+  "rail": "monid-x402",
+  "resource": "https://x402.monid.ai/v1/run",
+  "provider": "context.dev",
+  "endpoint": "/web/scrape/markdown",
+  "selected": {
+    "network": "eip155:8453",
+    "amount": "10000",
+    "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  "decision": "paid",
+  "http_status": 200,
+  "payment_response": "eyJzdWNjZXNzIjp0cnVlLCJwYXllciI6IjB4MTRkZjc3MkJENDk2YkJiN2Y0OUJjM0U5OTJDZTEzQjJjNDQxMTc3RiIsInRyYW5zYWN0aW9uIjoiMHg0YTg3ZGNmMTlkZmM5MGEwOTVlYTQ2N2Y3ZjJlMTU1NDI3ZTk4MTE4M2E0MDg2ZWZkZTRjNzU3NjdkZjQ1MTdlIiwibmV0d29yayI6ImVpcDE1NTo4NDUzIn0=",
+  "signer_invocation_count": 1,
+  "usdc_spent": 0.01,
+  "capturedAt": "2026-09-12T03:41:26.373Z"
+}

@@ -1,5 +1,23 @@
-import { RAIL, REFUSE_SCHEMA } from "./constants.js";
-import type { PolicyDecision, RefuseReceipt, RunTarget } from "./types.js";
+import { PAID_SCHEMA, PAY_FAILED_SCHEMA, RAIL, REFUSE_SCHEMA } from "./constants.js";
+import { amountMicro, usdcFromMicro } from "./payment-required.js";
+import type {
+  OfferSlice,
+  PaidReceipt,
+  PayFailedReceipt,
+  PolicyDecision,
+  RefuseReceipt,
+  RunTarget,
+  X402Accept
+} from "./types.js";
+
+function offerSlice(accept: X402Accept): OfferSlice {
+  return {
+    network: accept.network,
+    amount: accept.amount,
+    payTo: accept.payTo,
+    asset: accept.asset
+  };
+}
 
 export function refuseReceipt(
   target: RunTarget,
@@ -46,6 +64,54 @@ export function spendGatedReceipt(
     reason,
     code: "spend_gated",
     signer_invocation_count: 0,
+    usdc_spent: 0,
+    capturedAt
+  };
+}
+
+export function paidReceipt(
+  target: RunTarget,
+  selected: X402Accept,
+  resourceUrl: string,
+  httpStatus: number,
+  paymentResponse: string | null,
+  capturedAt = new Date().toISOString()
+): PaidReceipt {
+  return {
+    schema: PAID_SCHEMA,
+    rail: RAIL,
+    resource: resourceUrl,
+    provider: target.provider,
+    endpoint: target.endpoint,
+    selected: offerSlice(selected),
+    decision: "paid",
+    http_status: httpStatus,
+    payment_response: paymentResponse,
+    signer_invocation_count: 1,
+    usdc_spent: usdcFromMicro(amountMicro(selected)),
+    capturedAt
+  };
+}
+
+export function payFailedReceipt(
+  target: RunTarget,
+  selected: X402Accept | null,
+  resourceUrl: string,
+  reason: string,
+  code: string,
+  capturedAt = new Date().toISOString()
+): PayFailedReceipt {
+  return {
+    schema: PAY_FAILED_SCHEMA,
+    rail: RAIL,
+    resource: resourceUrl,
+    provider: target.provider,
+    endpoint: target.endpoint,
+    selected: selected ? offerSlice(selected) : null,
+    decision: "pay_failed",
+    reason,
+    code,
+    signer_invocation_count: 1,
     usdc_spent: 0,
     capturedAt
   };

@@ -61,5 +61,6 @@ Independent nodes. The maker of a lane does not grade it.
 5. Listen on `127.0.0.1:8788` (`npm run listen`). Other agents set
    `MONID_API_BASE_URL=http://127.0.0.1:8788`. `8787` is a stale tool-audit
    film process. Leave it alone.
+6. Company brief is the first high-TA buyer loop: brand retrieve + homepage scrape.
 
-Pay stays gated. `PRIVATE_KEY` unset is a hold, not a skip of CATALOG/PROXY.
+Pay stays gated unless `--confirm-spend` and a refuse packet already exist.

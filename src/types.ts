@@ -70,3 +70,40 @@ export type RefuseReceipt = {
   usdc_spent: 0;
   capturedAt: string;
 };
+
+export type OfferSlice = {
+  network: string;
+  amount: string;
+  payTo: string;
+  asset: string;
+};
+
+export type PaidReceipt = {
+  schema: "twzrd.gate_eval_paid.v1";
+  rail: "monid-x402";
+  resource: string;
+  provider: string;
+  endpoint: string;
+  selected: OfferSlice;
+  decision: "paid";
+  http_status: number;
+  payment_response: string | null;
+  signer_invocation_count: 1;
+  usdc_spent: number;
+  capturedAt: string;
+};
+
+export type PayFailedReceipt = {
+  schema: "twzrd.gate_eval_pay_failed.v1";
+  rail: "monid-x402";
+  resource: string;
+  provider: string;
+  endpoint: string;
+  selected: OfferSlice | null;
+  decision: "pay_failed";
+  reason: string;
+  code: string;
+  signer_invocation_count: 1;
+  usdc_spent: 0;
+  capturedAt: string;
+};
