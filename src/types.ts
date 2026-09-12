@@ -78,6 +78,20 @@ export type OfferSlice = {
   asset: string;
 };
 
+export type SpendGatedReceipt = {
+  schema: "twzrd.gate_eval_spend_gated.v1";
+  rail: "monid-x402";
+  resource: string;
+  provider: string;
+  endpoint: string;
+  decision: "spend_gated";
+  reason: string;
+  code: "spend_gated";
+  signer_invocation_count: 0;
+  usdc_spent: 0;
+  capturedAt: string;
+};
+
 export type PaidReceipt = {
   schema: "twzrd.gate_eval_paid.v1";
   rail: "monid-x402";
@@ -88,6 +102,9 @@ export type PaidReceipt = {
   decision: "paid";
   http_status: number;
   payment_response: string | null;
+  payer: string | null;
+  transaction: string | null;
+  network: string | null;
   signer_invocation_count: 1;
   usdc_spent: number;
   capturedAt: string;
