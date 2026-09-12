@@ -1,0 +1,46 @@
+{
+  "schema": "twzrd.pay_attempt.v1",
+  "rail": "monid-x402",
+  "completion": "incomplete",
+  "capturedAt": "2026-09-12T03:47:00Z",
+  "resource": "https://x402.monid.ai/v1/run",
+  "target": {
+    "provider": "context.dev",
+    "endpoint": "/web/scrape/markdown"
+  },
+  "offer": {
+    "network": "eip155:8453",
+    "amount": "10000",
+    "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+    "feePayer": null,
+    "note": "ExactEvm; extra has name/version only. Payer needs USDC and ETH."
+  },
+  "confirmSpend": true,
+  "signer_invocation_count": 0,
+  "usdc_spent": 0,
+  "wallets": [
+    {
+      "label": "x402-render/prd EVM_ADDRESS",
+      "address": "0x8b38f4A0d333BCAf44c91FC6cEB620840B8A4923",
+      "network": "eip155:8453",
+      "eth": 0,
+      "usdc": 0,
+      "key": "doppler EVM_PRIVATE_KEY name present, computed empty, visibility restricted"
+    },
+    {
+      "label": "x402-reader/prd EVM_ADDRESS",
+      "address": "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F",
+      "network": "eip155:8453",
+      "eth": 0,
+      "usdc": 2.395,
+      "key": "no EVM_PRIVATE_KEY in doppler or reader .env (payTo fields only)"
+    }
+  ],
+  "blocked": [
+    "no usable PRIVATE_KEY in this shell",
+    "named render key is empty",
+    "render wallet has 0 USDC",
+    "no feePayer on the 402 so gasless SVM-style pay does not apply"
+  ],
+  "not_done": "on-chain USDC transfer + run body"
+}

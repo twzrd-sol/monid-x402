@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
 import { companyBriefPlan } from "./brief.js";
+import { runVendorPrescreen } from "./product.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
-import { decidePayPath } from "./decision.js";
+import { decidePayPath, type WashCoverage } from "./decision.js";
 import { doctor } from "./doctor.js";
 import { checkMatrix, loadMatrix, writeDriftReport } from "./drift.js";
 import { pagesRoot, startFront } from "./front.js";
 import { scrapePayInput } from "./input.js";
+import { evaluateWashPayTo } from "./twzrd-gate.js";
 import { inspectEndpoint } from "./inspect.js";
 import { appendLedger, rebuildLedgerIndex, requireRefuseOnDisk } from "./ledger.js";
 import { PayGatedError, payRun } from "./pay.js";
@@ -49,6 +51,14 @@ function targetFromArgs() {
     endpoint: arg("--endpoint", DEFAULT_ENDPOINT)!,
     input: parseInput()
   });
+}
+
+function optionalPrivateKey(): `0x${string}` | undefined {
+  const envKey = process.env.PRIVATE_KEY;
+  if (envKey?.startsWith("0x")) return envKey as `0x${string}`;
+  const file = arg("--key-file", process.env.EVM_PRIVATE_KEY_FILE);
+  if (!file) return undefined;
+  return loadPrivateKey();
 }
 
 function loadPrivateKey(): `0x${string}` {
@@ -137,7 +147,7 @@ async function pay() {
   const maxAmountMicro = BigInt(arg("--max-amount-micro", "10000")!);
   const result = await payRun({
     confirmSpend: true,
-    privateKey: loadPrivateKey(),
+    privateKey: optionalPrivateKey(),
     policy: defaultPolicy({ maxAmountMicro }),
     target
   });
@@ -170,7 +180,7 @@ async function brief() {
     requireRefuseOnDisk("evidence/ledger", step.target);
     const result = await payRun({
       confirmSpend: true,
-      privateKey: loadPrivateKey(),
+      privateKey: optionalPrivateKey(),
       policy: defaultPolicy({ maxAmountMicro: maxPay }),
       target: step.target
     });
@@ -206,11 +216,20 @@ async function brief() {
 async function decision() {
   const target = targetFromArgs();
   const probe = await probeRun402(target);
+  const payTo = probe.paymentRequired.accepts[0]?.payTo;
+  let washCoverage: WashCoverage | undefined;
+  if (payTo) {
+    const wash = await evaluateWashPayTo(payTo);
+    if (wash && "abort" in wash && wash.abort) {
+      washCoverage = wash.reason.includes("twzrd_wash_flagged") ? "flagged" : "unknown";
+    }
+  }
   const verdict = decidePayPath({
     inspectKeyPresent: Boolean(process.env.MONID_API_KEY),
     confirmSpend: flag("--confirm-spend"),
     privateKeyPresent: Boolean(process.env.PRIVATE_KEY?.startsWith("0x")),
     proxyHasWallet: false,
+    washCoverage,
     defaultCap: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy({ maxAmountMicro: 1n })),
     floor: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy())
   });
@@ -267,7 +286,39 @@ async function listen() {
   console.error(`monid-x402 proxy ${base}`);
   console.error(`MONID_API_BASE_URL=${base}`);
   console.error("POST /v1/run → x402 + refuse/spend_gated. Listen has no wallet.");
+  console.error("Desk GET /  ·  SKU GET /prescreen  ·  POST /v1/product/run  ·  pay is CLI only");
   console.error("GET /v1/runs/:id → SIWX retrieve refuse. GET /v1/runs list is 501.");
+}
+
+function writeProduct(run: Awaited<ReturnType<typeof runVendorPrescreen>>): void {
+  writeFileSync("evidence/product-quote.json", `${JSON.stringify(run.quote, null, 2)}\n`);
+  writeFileSync("pages/prescreen-quote.json", `${JSON.stringify(run.quote, null, 2)}\n`);
+  writeFileSync("evidence/product-run.json", `${JSON.stringify(run, null, 2)}\n`);
+  writeFileSync("pages/prescreen-run.json", `${JSON.stringify(run, null, 2)}\n`);
+  const out = arg("--out");
+  if (out) writeFileSync(out, `${JSON.stringify(run, null, 2)}\n`);
+  else {
+    appendLedger("evidence/ledger", {
+      kind: "run",
+      httpStatus: run.decision === "paid" || run.decision === "quoted" ? 200 : 403,
+      receipt: run
+    });
+  }
+}
+
+async function product() {
+  const url = arg("--url", "https://monid.ai")!;
+  const confirmSpend = flag("--confirm-spend");
+  const run = await runVendorPrescreen(url, {
+    confirmSpend,
+    privateKey: confirmSpend ? optionalPrivateKey() : undefined,
+    requireRefuseDir: confirmSpend ? "evidence/ledger" : undefined,
+    maxAmountMicro: confirmSpend ? BigInt(arg("--max-amount-micro", "178200")!) : undefined
+  });
+  writeProduct(run);
+  console.log(JSON.stringify(run, null, 2));
+  if (run.decision !== "quoted" && run.decision !== "paid") process.exitCode = 2;
+  if (!confirmSpend && run.quote.nextGate !== "confirm_spend") process.exitCode = 2;
 }
 
 async function front() {
@@ -380,13 +431,14 @@ async function main() {
   if (command === "listen") return listen();
   if (command === "front") return front();
   if (command === "brief") return brief();
+  if (command === "product") return product();
   if (command === "index") return indexLedger();
   if (command === "retrieve") return retrieve();
   if (command === "e2e") return e2e();
   if (command === "verify") return verify();
   if (command === "doctor") return doctorCmd();
   console.error(
-    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|e2e|listen|front|brief|index|verify|doctor>"
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|e2e|listen|front|brief|product|index|verify|doctor>"
   );
   process.exitCode = 2;
 }

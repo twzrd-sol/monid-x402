@@ -44,6 +44,7 @@ npm run index
 npm run verify
 npm run retrieve:live
 npm run e2e:listen
+npm run quote:live
 ```
 
 `refuse:live` hits the live 402, applies `--max-amount-micro 1`, and writes a
@@ -51,10 +52,31 @@ npm run e2e:listen
 `usdc_spent: 0`. No key. No wallet.
 
 Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
-`@x402/fetch` + `ExactEvmScheme`. Policy still runs on the 402 *before*
-the signer is constructed, and again on `onBeforePaymentCreation`.
+`@x402/fetch` + `ExactEvmScheme`. Local policy still runs on the 402
+*before* the signer is constructed, and again first on
+`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.5`
+runs a wash-only `GET merchant_card/{payTo}` (Base and Monad). This
+client does not select the full preflight engine.
+
+On this pin: `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200
+card with missing, partial, or stale coverage also aborts
+(`twzrd_wash_unknown`) — that tighten is ours; 0.9.5 itself treats
+unknown as allow. Fast lookup failures (503, network, invalid JSON)
+still allow inside the package. `TWZRD_FAIL_OPEN=false` only covers our
+2s outer timeout/throw, not those package-internal allows. Lookups we
+send carry `X-Twzrd-Caller: monid-x402/<version>@0.9.5` and
+`X-TWZRD-Integration: monid-x402/<version>` (the package itself does
+not stamp the wash GET). This rail is EVM and does not register Solana.
+
+Wash refuse happens after local allow and **before** the signer is
+constructed. Packet: `evidence/ledger/twzrd-wash-unknown.v1.json`.
+
+Default on. `TWZRD_AUTO_GATE=0` or `TWZRD_GATE_ENABLED=false` disables
+the wash seat; local policy stays. Listen 8788 still has no wallet.
+
 `decision:live` probes the live 402 and prints a `monid-x402.pay-path.v1`
-verdict. It never constructs a signer.
+verdict. It never constructs a signer. After confirm + key it can name
+`wash_coverage` when the merchant card is not full.
 `decision:listen` POSTs the 8788 pin (`MONID_API_BASE_URL`) and exits 0
 only on HTTP 402 `over_cap` with `signer_invocation_count: 0`. No wallet.
 Do not run pay for this tree unless a refuse receipt already exists.
@@ -81,7 +103,9 @@ npm run listen
 export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
-`GET /health` reports the bound port and `prepaid_run: false`.
+`GET /health` reports the bound port, `prepaid_run: false`, and
+`twzrd_gate: "0.9.5"`. `GET /` is the operate desk. Confirm on listen
+is still 403 — no proxy wallet. Pay is CLI `pay --confirm-spend` only.
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse
 or `spend_gated` packet. It never calls prepaid `api.monid.ai/v1/run`.
 Fleet workers live in `fleet/` and POST only that URL. Discover/inspect
@@ -98,6 +122,15 @@ domain (`context.dev /brand/retrieve`) then read the homepage
 npm run brief
 npm run brief:pay   # --confirm-spend; needs PRIVATE_KEY or --key-file
 ```
+
+SKU: `vendor-prescreen` is the tool-audit job on this rail (scrape +
+headers + cookies). `npm run quote:live` writes the buyer envelope
+(`twzrd.product_run.v1` + quote + incomplete deliver). Operate:
+`http://127.0.0.1:8788/prescreen`. Buyer API: `POST /v1/product/run`.
+Storefront: `pages/prescreen.html`. Pay is
+`node dist/cli.js product --confirm-spend --url https://…` only after a
+refuse packet exists for the seat being paid. Deliver never upgrades missing evidence to
+approval. USDC settles to Monid. TWZRD take-rate is 0.
 
 Front: `http://127.0.0.1:8790/brief.html`. Production pages deploy from `pages/`.
 

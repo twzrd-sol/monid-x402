@@ -70,11 +70,14 @@ test("legacy { decision } packets keep top-level decision for INDEX.json", () =>
   assert.equal(body.kind, undefined);
 });
 
-test("ledgerKindFromBody maps paid and pay_failed without collapsing to refuse", () => {
+test("ledgerKindFromBody maps paid, run, and deliver without collapsing to refuse", () => {
   assert.equal(ledgerKindFromBody({ decision: "paid" }), "paid");
   assert.equal(ledgerKindFromBody({ decision: "pay_failed", code: "insufficient_funds" }), "pay_failed");
   assert.equal(ledgerKindFromBody({ code: "spend_gated" }), "spend_gated");
   assert.equal(ledgerKindFromBody({ decision: "refuse", code: "over_cap" }), "refuse");
+  assert.equal(ledgerKindFromBody({ decision: "quote", sku: "vendor-prescreen" }), "quote");
+  assert.equal(ledgerKindFromBody({ schema: "twzrd.product_run.v1", decision: "quoted" }), "run");
+  assert.equal(ledgerKindFromBody({ schema: "twzrd.product_deliver.v1", decision: "deliver" }), "deliver");
 });
 
 test("packetSettled requires paid 200 plus PAYMENT-RESPONSE", () => {

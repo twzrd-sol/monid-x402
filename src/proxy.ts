@@ -1,7 +1,17 @@
+import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { MONID_API_URL, MONID_X402_RUN_URL } from "./constants.js";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { MONID_API_URL, MONID_X402_RUN_URL, TWZRD_GATE_PIN } from "./constants.js";
 import { ledgerKindFromBody, tryAppendLedger } from "./ledger.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
+import {
+  PRODUCT_SKU,
+  holdVendorPrescreenOnListen,
+  productCatalog,
+  quoteVendorPrescreen,
+  runVendorPrescreen
+} from "./product.js";
 import { probeRun402 } from "./probe.js";
 import { refuseReceipt, spendGatedReceipt } from "./receipt.js";
 import { parseRunsPath, probeRetrieve402, retrieveRefuse, retrieveSigned } from "./retrieve.js";
@@ -132,6 +142,9 @@ export async function handleProxyRequest(
         rail: "monid-x402",
         listen: String(options.listenPort ?? 8788),
         prepaid_run: false,
+        twzrd_gate: TWZRD_GATE_PIN,
+        desk: true,
+        sku: PRODUCT_SKU,
         listen_wallet: Boolean(options.listenPrivateKey)
       }
     };
@@ -168,6 +181,60 @@ export async function handleProxyRequest(
 
   if (method === "POST" && urlPath === "/v1/inspect") {
     return forwardMonid("/inspect", body, headers, fetchImpl);
+  }
+
+  if (method === "GET" && urlPath === "/v1/product") {
+    return { status: 200, body: productCatalog() };
+  }
+
+  if (method === "POST" && urlPath === "/v1/product/quote") {
+    const rec = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    const url = String(rec.url ?? rec.targetUrl ?? "");
+    if (!url.trim()) {
+      return { status: 400, body: { code: 400, message: "url required" } };
+    }
+    const quote = await quoteVendorPrescreen(url, { fetch: guardedFetch(fetchImpl) });
+    const status = quote.nextGate === "confirm_spend" ? 200 : 402;
+    return ledgered(status, quote, options.ledgerDir);
+  }
+
+  if (method === "POST" && urlPath === "/v1/product/confirm") {
+    const rec = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    const url = String(rec.url ?? rec.targetUrl ?? "https://example.com");
+    return ledgered(
+      403,
+      {
+        ...spendGatedReceipt(
+          { provider: PRODUCT_SKU, endpoint: "/quote" },
+          MONID_X402_RUN_URL,
+          "SKU quote is not enough. Listen has no wallet. Pay is CLI `product --confirm-spend` after a refuse packet."
+        ),
+        sku: PRODUCT_SKU,
+        targetUrl: url
+      },
+      options.ledgerDir
+    );
+  }
+
+  if (method === "POST" && urlPath === "/v1/product/run") {
+    const rec = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    const url = String(rec.url ?? rec.targetUrl ?? "");
+    if (!url.trim()) {
+      return { status: 400, body: { code: 400, message: "url required" } };
+    }
+    const quoted = await runVendorPrescreen(url, { fetch: guardedFetch(fetchImpl) });
+    if (confirmSpend(headers) || rec.confirmSpend === true) {
+      return ledgered(
+        403,
+        holdVendorPrescreenOnListen(
+          quoted,
+          "SKU run confirm is not enough. Listen has no wallet. Buyer pays via CLI `product --confirm-spend` after a refuse packet."
+        ),
+        options.ledgerDir
+      );
+    }
+    const status = quoted.quote.nextGate === "confirm_spend" ? 200 : 402;
+    return ledgered(status, quoted, options.ledgerDir);
   }
 
   if (method === "POST" && urlPath === "/v1/run") {
@@ -214,12 +281,26 @@ export async function handleProxyRequest(
   return { status: 404, body: { code: 404, message: `no route ${method} ${urlPath}` } };
 }
 
+const FRONT_DIR = join(dirname(fileURLToPath(import.meta.url)), "../front");
+const DESK_HTML = readFileSync(join(FRONT_DIR, "desk.html"), "utf8");
+const PRESCREEN_HTML = readFileSync(join(FRONT_DIR, "prescreen.html"), "utf8");
+
 export function startProxy(port = 0): Promise<{ server: Server; port: number }> {
   return new Promise((resolve) => {
     const bound = { port };
     const server = createServer(async (req, res) => {
       try {
         const urlPath = req.url?.split("?")[0] ?? "/";
+        if ((req.method ?? "GET") === "GET" && (urlPath === "/" || urlPath === "/desk")) {
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.end(DESK_HTML);
+          return;
+        }
+        if ((req.method ?? "GET") === "GET" && urlPath === "/prescreen") {
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.end(PRESCREEN_HTML);
+          return;
+        }
         const body = req.method === "POST" ? await readJson(req) : {};
         const result = await handleProxyRequest(
           req.method ?? "GET",

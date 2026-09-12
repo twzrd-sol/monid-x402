@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vendor-prescreen</title>
+  <style>
+    :root {
+      --bg: #11130f;
+      --ink: #e8eadc;
+      --muted: #8b9178;
+      --line: #2a2e24;
+      --refuse: #c45c26;
+      --gated: #c9a227;
+      --ok: #7aa05a;
+      --pad: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font: 14px/1.4 "IBM Plex Mono", ui-monospace, Menlo, monospace;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: var(--pad);
+      border-bottom: 1px solid var(--line);
+    }
+    header a { color: var(--muted); }
+    header strong { letter-spacing: 0.04em; }
+    main {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: calc(100vh - 49px);
+    }
+    form {
+      padding: var(--pad);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    label { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+    input {
+      width: 100%;
+      background: #0c0d0a;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      padding: 8px;
+      font: inherit;
+    }
+    button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      background: #1a1d16;
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+      padding: 8px 12px;
+    }
+    button.primary { background: #24281c; }
+    button:focus { outline: 2px solid var(--ok); outline-offset: 2px; }
+    p.note { color: var(--muted); font-size: 12px; }
+    pre {
+      padding: var(--pad);
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status { padding: 8px var(--pad); border-bottom: 1px solid var(--line); color: var(--muted); }
+    .status.refuse { color: var(--refuse); }
+    .status.gated { color: var(--gated); }
+    .status.ok { color: var(--ok); }
+    @media (max-width: 720px) {
+      main { grid-template-columns: 1fr; }
+      form { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>vendor-prescreen</strong>
+    <span><a href="/">desk</a> · live 402 quote · not the prepaid film</span>
+  </header>
+  <main>
+    <form id="sku">
+      <div>
+        <label for="url">target URL</label>
+        <input id="url" name="url" value="https://monid.ai" autocomplete="off">
+      </div>
+      <p class="note">Three x402 seats: scrape, security headers, cookie scan. Quote → run envelope → listen confirm stays 403. USDC settles to Monid. TWZRD take-rate is 0.</p>
+      <button type="submit" id="quote">quote (no wallet)</button>
+      <button type="button" id="run">run (quote + deliver, no pay)</button>
+      <button type="button" class="primary" id="confirm">confirm-spend (listen stays 403)</button>
+    </form>
+    <section>
+      <div class="status" id="status">idle</div>
+      <pre id="out">No quote yet.</pre>
+    </section>
+  </main>
+  <script>
+    const statusEl = document.getElementById("status");
+    const out = document.getElementById("out");
+    function paint(http, packet) {
+      const gate = packet && (packet.nextGate || packet.decision || packet.code);
+      const verdict = packet && packet.deliver && packet.deliver.verdict;
+      statusEl.className = "status";
+      if (http === 402 || gate === "over_cap" || gate === "catalog_gap") statusEl.classList.add("refuse");
+      else if (http === 403 || gate === "spend_gated" || gate === "proxy_wallet") statusEl.classList.add("gated");
+      else if (gate === "confirm_spend" || gate === "quote" || gate === "quoted") statusEl.classList.add("ok");
+      statusEl.textContent = http + " " + (gate || "") + (verdict ? " · " + verdict : "");
+      out.textContent = JSON.stringify(packet, null, 2);
+    }
+    async function post(path) {
+      statusEl.className = "status";
+      statusEl.textContent = "…";
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: document.getElementById("url").value.trim() })
+      });
+      paint(res.status, await res.json());
+    }
+    document.getElementById("sku").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      await post("/v1/product/quote");
+    });
+    document.getElementById("run").addEventListener("click", async () => {
+      await post("/v1/product/run");
+    });
+    document.getElementById("confirm").addEventListener("click", async () => {
+      await post("/v1/product/confirm");
+    });
+  </script>
+</body>
+</html>

@@ -28,7 +28,8 @@
     "retrieve:live": "npm run build && node dist/cli.js retrieve",
     "retrieve:sign": "npm run build && node dist/cli.js retrieve --confirm-sign",
     "e2e:listen": "npm run build && node dist/cli.js e2e --base http://127.0.0.1:8788",
-    "doctor": "npm run build && node dist/cli.js doctor"
+    "doctor": "npm run build && node dist/cli.js doctor",
+    "quote:live": "npm run build && node dist/cli.js product --url https://monid.ai"
   },
   "keywords": [
     "x402",
@@ -47,6 +48,7 @@
     "@x402/evm": "^2.25.0",
     "@x402/extensions": "^2.25.0",
     "@x402/fetch": "^2.25.0",
+    "twzrd-x402-gate": "0.9.5",
     "viem": "^2.56.3"
   }
 }

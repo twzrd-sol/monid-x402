@@ -2,6 +2,8 @@ import type { PolicyDecision } from "./types.js";
 
 export const PAY_PATH_SCHEMA = "monid-x402.pay-path.v1" as const;
 
+export type WashCoverage = "full" | "unknown" | "flagged";
+
 export type PayPathInput = {
   inspectKeyPresent: boolean;
   confirmSpend: boolean;
@@ -9,6 +11,8 @@ export type PayPathInput = {
   proxyHasWallet: boolean;
   defaultCap: PolicyDecision;
   floor: PolicyDecision;
+  /** Set when a 200 merchant_card was seen. Omitted on lookup failure. */
+  washCoverage?: WashCoverage;
 };
 
 export type PayPathDecision = {
@@ -17,7 +21,14 @@ export type PayPathDecision = {
   inspect: "skipped_no_key" | "available";
   defaultCap: { decision: PolicyDecision["decision"]; code?: string };
   floor: { decision: PolicyDecision["decision"]; code?: string };
-  nextGate: "inspect_key" | "over_cap" | "confirm_spend" | "private_key" | "proxy_wallet" | "ready";
+  nextGate:
+    | "inspect_key"
+    | "over_cap"
+    | "confirm_spend"
+    | "private_key"
+    | "proxy_wallet"
+    | "wash_coverage"
+    | "ready";
   blocker: string;
   nextStep: string;
   signer_invocation_count: 0;
@@ -70,6 +81,21 @@ export function decidePayPath(input: PayPathInput): PayPathDecision {
       nextGate: "private_key",
       blocker: "PRIVATE_KEY is unset. CLI pay refuses before a signer is constructed.",
       nextStep: "Provision a dedicated EVM key for this repo only. Do not reuse outbid or aggregator keys."
+    });
+  }
+
+  if (input.washCoverage && input.washCoverage !== "full") {
+    return pack({
+      inspect,
+      defaultCap,
+      floor,
+      nextGate: "wash_coverage",
+      blocker:
+        input.washCoverage === "flagged"
+          ? "merchant_card wash_flagged=true. twzrd-x402-gate@0.9.5 aborts before the signer."
+          : "merchant_card coverage is unknown (missing, partial, or stale). This client refuses twzrd_wash_unknown.",
+      nextStep:
+        "Do not sign. Coverage is wallet-keyed. Packet is twzrd_wash_unknown or twzrd_wash_flagged."
     });
   }
 

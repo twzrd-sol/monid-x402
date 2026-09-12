@@ -2,10 +2,23 @@ import { ExactEvmScheme } from "@x402/evm";
 import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { privateKeyToAccount } from "viem/accounts";
 import { MONID_X402_RUN_URL, NETWORK_BASE, NETWORK_MONAD } from "./constants.js";
-import { createBeforePaymentCreationHook, defaultPolicy, evaluatePaymentRequired } from "./policy.js";
+import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
 import { paidReceipt, payFailedReceipt, refuseReceipt } from "./receipt.js";
-import type { PaidReceipt, PayFailedReceipt, Policy, RefuseReceipt, RunTarget, X402Accept } from "./types.js";
+import {
+  composeBeforePaymentCreation,
+  evaluateWashPayTo,
+  refuseCodeFromReason
+} from "./twzrd-gate.js";
+import type {
+  PaidReceipt,
+  PayFailedReceipt,
+  Policy,
+  PolicyDecision,
+  RefuseReceipt,
+  RunTarget,
+  X402Accept
+} from "./types.js";
 
 export class PayGatedError extends Error {
   constructor(message: string) {
@@ -34,6 +47,7 @@ export type PayOptions = {
   privateKey?: `0x${string}`;
   policy?: Policy;
   target?: RunTarget;
+  fetch?: typeof fetch;
 };
 
 export type PayResult =
@@ -53,18 +67,39 @@ function failCode(reason: string): string {
   return "pay_failed";
 }
 
-function buildPaidFetch(privateKey: `0x${string}`, policy: Policy): typeof fetch {
+function buildPaidFetch(
+  privateKey: `0x${string}`,
+  policy: Policy,
+  fetchImpl: typeof fetch
+): typeof fetch {
   const account = privateKeyToAccount(privateKey);
   const client = new x402Client()
     .register(NETWORK_BASE, new ExactEvmScheme(account))
     .register(NETWORK_MONAD, new ExactEvmScheme(account))
-    .onBeforePaymentCreation(createBeforePaymentCreationHook(policy));
-  return wrapFetchWithPayment(fetch, client);
+    .onBeforePaymentCreation(composeBeforePaymentCreation(policy));
+  return wrapFetchWithPayment(fetchImpl, client);
+}
+
+function washRefuseReceipt(
+  target: RunTarget,
+  verdict: Extract<PolicyDecision, { decision: "allow" }>,
+  reason: string
+): RefuseReceipt {
+  return refuseReceipt(
+    target,
+    {
+      decision: "refuse",
+      selected: verdict.selected,
+      reason,
+      code: refuseCodeFromReason(reason)
+    },
+    MONID_X402_RUN_URL
+  );
 }
 
 /**
- * Pay path. Policy runs on the 402 before a signer is constructed.
- * Hook stays registered so a swapped offer still cannot sign.
+ * Pay path. Local policy, then wash, then a key. Wash refuse does not
+ * need a wallet. Hook stays registered so a swapped offer still cannot sign.
  */
 export async function payRun(options: PayOptions): Promise<PayResult> {
   if (options.confirmSpend !== true) {
@@ -72,7 +107,8 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
   }
   const target = options.target ?? defaultTarget();
   const policy = options.policy ?? defaultPolicy();
-  const probe = await probeRun402(target);
+  const fetchImpl = options.fetch ?? globalThis.fetch;
+  const probe = await probeRun402(target, fetchImpl);
   const verdict = evaluatePaymentRequired(probe.paymentRequired, policy);
   if (verdict.decision === "refuse") {
     return {
@@ -80,6 +116,15 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
       receipt: refuseReceipt(target, verdict, MONID_X402_RUN_URL)
     };
   }
+
+  const wash = await evaluateWashPayTo(verdict.selected.payTo, { fetch: fetchImpl });
+  if (wash && "abort" in wash && wash.abort) {
+    return {
+      kind: "refused",
+      receipt: washRefuseReceipt(target, verdict, wash.reason)
+    };
+  }
+
   const key = options.privateKey;
   if (!key?.startsWith("0x") || key.length < 66) {
     throw new PayGatedError("Pay requires a 0x PRIVATE_KEY after policy allow. Do not invent one.");
@@ -87,7 +132,7 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
 
   const selected: X402Accept = verdict.selected;
   try {
-    const paidFetch = buildPaidFetch(key, policy);
+    const paidFetch = buildPaidFetch(key, policy, fetchImpl);
     const response = await paidFetch(MONID_X402_RUN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -134,6 +179,13 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
     };
   } catch (error) {
     const reason = redact(error instanceof Error ? error.message : String(error));
+    const aborted = reason.match(/Payment creation aborted:\s*(.+)$/);
+    if (aborted?.[1] && /twzrd_wash|twzrd gate/.test(aborted[1])) {
+      return {
+        kind: "refused",
+        receipt: washRefuseReceipt(target, verdict, aborted[1])
+      };
+    }
     return {
       kind: "failed",
       receipt: payFailedReceipt(target, selected, MONID_X402_RUN_URL, reason, failCode(reason))
