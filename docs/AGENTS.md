@@ -50,6 +50,13 @@ settled paid (HTTP 200 + PAYMENT-RESPONSE).
 Write: `fleet/` only. Isolated workers. No shared key. Do not edit PROXY
 while the listen is running.
 
+## RETRIEVE (week 3)
+
+Write: `src/retrieve.ts`. Job: `GET https://x402.monid.ai/v1/runs/:id` with
+no payment header. Live 402 has empty `accepts[]` plus SIWX. Refuse
+`siwx_no_pay_offer`. Do not sign. `--confirm-spend` is rejected. Listen
+`GET /v1/runs/:id` is the same refuse. `GET /v1/runs` list stays 501.
+
 ## VERIFY
 
 Write: `evidence/verify/` plus `src/verify.ts`. Re-fetch a 402. Check

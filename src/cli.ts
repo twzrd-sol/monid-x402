@@ -16,7 +16,8 @@ import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
-import { gradeDefaultPath } from "./verify.js";
+import { probeRetrieve402, retrieveRefuse } from "./retrieve.js";
+import { gradeDefaultPath, gradeWeek3 } from "./verify.js";
 
 function arg(name: string, fallback?: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -265,6 +266,7 @@ async function listen() {
   console.error(`monid-x402 proxy ${base}`);
   console.error(`MONID_API_BASE_URL=${base}`);
   console.error("POST /v1/run → x402 + refuse/spend_gated. Listen has no wallet.");
+  console.error("GET /v1/runs/:id → SIWX retrieve refuse. GET /v1/runs list is 501.");
 }
 
 async function front() {
@@ -280,16 +282,65 @@ function indexLedger() {
   console.log(JSON.stringify({ dir, totals: report.totals }, null, 2));
 }
 
+function defaultRunId(): string {
+  const fromArg = arg("--run-id");
+  if (fromArg) return fromArg;
+  for (const path of ["pages/data.json", "pages/paid.json"]) {
+    try {
+      const rec = JSON.parse(readFileSync(path, "utf8")) as { runId?: string; body?: { runId?: string } };
+      const id = rec.runId ?? rec.body?.runId;
+      if (typeof id === "string" && id) return id;
+    } catch {
+      /* next */
+    }
+  }
+  throw new Error("retrieve needs --run-id or a runId on pages/paid.json");
+}
+
+async function retrieve() {
+  if (flag("--confirm-spend")) {
+    throw new PayGatedError(
+      "Retrieve SIWX is not a USDC pay. Confirm-spend does not sign identity. Refuse is the week-3 hold."
+    );
+  }
+  const runId = defaultRunId();
+  const probe = await probeRetrieve402(runId);
+  const receipt = retrieveRefuse(probe);
+  const out = writePacket(receipt);
+  writeFileSync(
+    "evidence/live-402-retrieve.json",
+    `${JSON.stringify(
+      {
+        url: probe.url,
+        status: probe.status,
+        accepts: probe.paymentRequired.accepts.length,
+        siwx: Boolean(probe.paymentRequired.extensions?.["sign-in-with-x"]),
+        receipt
+      },
+      null,
+      2
+    )}\n`
+  );
+  console.log(JSON.stringify({ out, receipt }, null, 2));
+  if (receipt.signer_invocation_count !== 0 || receipt.usdc_spent !== 0) {
+    process.exitCode = 2;
+  }
+}
+
 async function verify() {
   const report = await gradeDefaultPath(process.cwd());
+  const week3 = await gradeWeek3(process.cwd(), defaultRunId());
   console.log(
     JSON.stringify(
-      { verdict: report.verdict, gradedAt: report.gradedAt, checks: report.checks },
+      {
+        week2: { verdict: report.verdict, gradedAt: report.gradedAt, checks: report.checks },
+        week3: { verdict: week3.verdict, gradedAt: week3.gradedAt, checks: week3.checks }
+      },
       null,
       2
     )
   );
-  if (report.verdict !== "valid") process.exitCode = 2;
+  if (report.verdict !== "valid" || week3.verdict !== "valid") process.exitCode = 2;
 }
 
 async function doctorCmd() {
@@ -313,10 +364,11 @@ async function main() {
   if (command === "front") return front();
   if (command === "brief") return brief();
   if (command === "index") return indexLedger();
+  if (command === "retrieve") return retrieve();
   if (command === "verify") return verify();
   if (command === "doctor") return doctorCmd();
   console.error(
-    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|listen|front|brief|index|verify|doctor>"
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|listen|front|brief|index|verify|doctor>"
   );
   process.exitCode = 2;
 }

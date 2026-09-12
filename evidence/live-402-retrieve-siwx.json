@@ -1,0 +1,32 @@
+{
+  "capturedAt": "2026-09-12T17:56:32.621Z",
+  "method": "GET",
+  "url": "https://x402.monid.ai/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+  "httpStatus": 402,
+  "paymentHeaderSent": false,
+  "signer_invocation_count": 0,
+  "paymentRequired": {
+    "x402Version": 2,
+    "error": "Payment required",
+    "resource": {
+      "url": "http://x402.monid.ai/x402/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+      "description": "",
+      "mimeType": ""
+    },
+    "accepts": [],
+    "extensions": {
+      "sign-in-with-x": {
+        "info": {
+          "domain": "x402.monid.ai",
+          "uri": "http://x402.monid.ai/x402/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+          "version": "1",
+          "statement": "Sign in to access your run results"
+        },
+        "supportedChains": [
+          { "chainId": "eip155:8453", "type": "eip191" },
+          { "chainId": "eip155:143", "type": "eip191" }
+        ]
+      }
+    }
+  }
+}
