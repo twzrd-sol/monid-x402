@@ -97,6 +97,13 @@ export async function handleProxyRequest(
   headers: ProxyHeaders = {},
   fetchImpl: typeof fetch = globalThis.fetch
 ): Promise<{ status: number; body: unknown }> {
+  if (method === "GET" && urlPath === "/health") {
+    return {
+      status: 200,
+      body: { ok: true, rail: "monid-x402", listen: "8788", prepaid_run: false }
+    };
+  }
+
   if (method === "GET" && urlPath.startsWith("/v1/runs")) {
     return { status: 501, body: { code: 501, message: "Week 0: do not forward prepaid run list" } };
   }

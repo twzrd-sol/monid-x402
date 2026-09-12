@@ -110,6 +110,22 @@ test("startProxy binds loopback; unknown route is 404", async () => {
   }
 });
 
+test("GET /health is 200 and does not fetch", async () => {
+  let fetched = false;
+  const result = await handleProxyRequest("GET", "/health", {}, {}, async () => {
+    fetched = true;
+    return new Response("nope");
+  });
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body, {
+    ok: true,
+    rail: "monid-x402",
+    listen: "8788",
+    prepaid_run: false
+  });
+  assert.equal(fetched, false);
+});
+
 test("GET /v1/runs is 501 and does not fetch prepaid", async () => {
   let fetched = false;
   const result = await handleProxyRequest("GET", "/v1/runs", {}, {}, async () => {

@@ -64,3 +64,23 @@ Independent nodes. The maker of a lane does not grade it.
 6. Company brief is the first high-TA buyer loop: brand retrieve + homepage scrape.
 
 Pay stays gated unless `--confirm-spend` and a refuse packet already exist.
+
+## Week 1 (door for other agents)
+
+1. PROXY: `GET /health` on the listen so a fleet can tell 8788 from the 8787 film.
+2. FLEET: isolated worker dir `fleet/`. Workers POST only
+   `MONID_API_BASE_URL/v1/run` (default `http://127.0.0.1:8788`). No shared key.
+   No prepaid `api.monid.ai/v1/run`.
+3. CATALOG: drift check vs pinned payTo `0x9D3d9410Be95fa1d230734B961997427fc61D837`
+   and networks `eip155:8453` + `eip155:143`. Write `evidence/catalog-drift.json`.
+   Row count is not adoption.
+4. LEDGER: append-only index of `evidence/ledger/` packets. No overwrites.
+
+## Week 2 (honest grade)
+
+1. VERIFY: independent grader. Re-fetch one live 402. Check refuse + paid
+   packets. Write `evidence/verify/week2.json` only. Never edit `src/`.
+2. FILM: `pages/week12.html` + `pages/week12.json` from verify + ledger.
+   Never `tool-audit/pages/`.
+
+Still later: proxy wallet, SIWX retrieve, Solana, a second partner.

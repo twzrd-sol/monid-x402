@@ -37,6 +37,18 @@ Job: append-only refuse/pay JSON. No overwrites.
 
 Read only. Re-fetch a 402. Check packet fields. Output valid / not 1.
 
+## FLEET
+
+Write: `fleet/` only. Isolated workers. No shared key. Do not edit PROXY
+while the listen is running.
+
+## VERIFY
+
+Write: `evidence/verify/` only. Re-fetch a 402. Check packet fields.
+Output valid / not 1. Never edit `src/`.
+
 ## FILM
 
-Write: `pages/` in this repo only. Never `tool-audit/pages/`.
+Write: `pages/` in this repo only. Never `tool-audit/pages/`. Week 1-2:
+`pages/week12.html` and `pages/week12.json` only unless you already own
+another pages file.
