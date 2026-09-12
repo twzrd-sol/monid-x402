@@ -128,7 +128,7 @@ headers + cookies). `npm run quote:live` writes the buyer envelope
 `http://127.0.0.1:8788/prescreen`. Buyer API: `POST /v1/product/run`.
 Storefront: `pages/prescreen.html`. Pay is
 `node dist/cli.js product --confirm-spend --url https://…` only after a
-refuse packet exists. Deliver never upgrades missing evidence to
+refuse packet exists for the seat being paid. Deliver never upgrades missing evidence to
 approval. USDC settles to Monid. TWZRD take-rate is 0.
 
 Front: `http://127.0.0.1:8790/brief.html`. Production pages deploy from `pages/`.

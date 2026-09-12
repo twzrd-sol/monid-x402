@@ -37,7 +37,7 @@ export function productCatalog() {
         job: "First-pass vendor evidence: scrape + security headers + cookie scan",
         quote: "POST /v1/product/quote",
         run: "POST /v1/product/run",
-        pay: "CLI `product --confirm-spend` after a refuse packet per seat",
+        pay: "CLI `product --confirm-spend` after a refuse packet for that seat",
         operate: "GET /prescreen",
         settlement: {
           recipient: "monid" as const,
@@ -52,7 +52,7 @@ export function productCatalog() {
         job: "Resolve a domain then read the homepage. High-TA research/sales loop.",
         quote: "CLI `brief` (refuse under cap)",
         run: "CLI `brief`",
-        pay: "CLI `brief --confirm-spend` after a refuse packet per seat",
+        pay: "CLI `brief --confirm-spend` after a refuse packet for that seat",
         operate: "GET / on the desk; pages/brief.html",
         settlement: {
           recipient: "monid" as const,
@@ -247,7 +247,7 @@ export async function quoteVendorPrescreen(
     ? "One or more SKU seats did not 402. Quote is not a price lock."
     : over
       ? `quoted ${totalMicro} exceeds cap ${capMicro}. Do not sign.`
-      : "Quote allowed under cap. Listen has no wallet. Confirm-spend is CLI only.";
+      : "Quote allowed under cap. Pay is CLI `product --confirm-spend` after a refuse packet for that seat.";
 
   return {
     schema: PRODUCT_SCHEMA,
@@ -275,7 +275,7 @@ export async function quoteVendorPrescreen(
     blocker,
     nextStep:
       nextGate === "confirm_spend"
-        ? "Operator runs `product --confirm-spend` only after a refuse packet exists. Do not invent a key."
+        ? "Operator runs `product --confirm-spend` after a refuse packet for each seat being paid."
         : "Do not sign. Re-probe or raise the quote cap only after a refuse packet exists.",
     signer_invocation_count: 0,
     usdc_spent: 0,
@@ -344,7 +344,7 @@ export type ProductRun = {
   steps: ProductStepResult[];
   deliver: ProductDeliver;
   decision: "quoted" | "held" | "paid" | "incomplete";
-  canPay: false;
+  canPay: boolean;
   nextGate: "confirm_spend" | "over_cap" | "catalog_gap" | "proxy_wallet" | "refuse_required" | "wash" | "key" | "none";
   blocker: string;
   nextStep: string;
@@ -558,6 +558,14 @@ function gateFromHold(steps: ProductStepResult[], quote: ProductQuote): ProductR
   if (steps.some((step) => step.kind === "refused" && step.receipt && "code" in step.receipt && /wash/i.test(step.receipt.code))) {
     return "wash";
   }
+  if (
+    steps.some(
+      (step) =>
+        step.kind === "spend_gated" && /refuse packet/i.test(step.reason ?? "")
+    )
+  ) {
+    return "refuse_required";
+  }
   if (steps.some((step) => step.kind === "spend_gated")) return "key";
   if (quote.nextGate !== "confirm_spend") return quote.nextGate;
   if (steps.every((step) => step.kind === "paid")) return "none";
@@ -607,7 +615,11 @@ export async function runVendorPrescreen(
       steps,
       deliver,
       decision,
-      canPay: false,
+      canPay: Boolean(
+        options?.confirmSpend &&
+          options.privateKey?.startsWith("0x") &&
+          quote.nextGate === "confirm_spend"
+      ),
       nextGate,
       blocker: extra.blocker ?? quote.blocker,
       nextStep: extra.nextStep ?? quote.nextStep,
@@ -625,22 +637,6 @@ export async function runVendorPrescreen(
       blocker: quote.blocker,
       nextStep: quote.nextStep
     });
-  }
-
-  if (options.requireRefuseDir) {
-    const missing = plan.steps.filter(
-      (step) => !hasRefusePacket(options.requireRefuseDir as string, step.target)
-    );
-    if (missing.length > 0) {
-      return finish(quotedStepResults(quote, plan), {
-        decision: "held",
-        nextGate: "refuse_required",
-        blocker: `Confirm-spend needs a refuse packet for ${missing
-          .map((step) => `${step.target.provider}${step.target.endpoint}`)
-          .join(", ")}. Do not invent one.`,
-        nextStep: "Refuse each SKU seat under cap, then retry product --confirm-spend. Do not invent a key."
-      });
-    }
   }
 
   if (quote.nextGate !== "confirm_spend") {
@@ -674,6 +670,20 @@ export async function runVendorPrescreen(
         kind: "skipped",
         reason: "Prior SKU step was not paid. Remaining seats were not signed."
       });
+      continue;
+    }
+    if (options.requireRefuseDir && !hasRefusePacket(options.requireRefuseDir, step.target)) {
+      const reason = `no refuse packet on disk for ${step.target.provider}${step.target.endpoint}. Refuse first.`;
+      steps.push({
+        role: step.role,
+        why: step.why,
+        provider: step.target.provider,
+        endpoint: step.target.endpoint,
+        kind: "spend_gated",
+        receipt: spendGatedReceipt(step.target, MONID_X402_RUN_URL, reason),
+        reason
+      });
+      stop = true;
       continue;
     }
     try {
@@ -733,6 +743,7 @@ export async function runVendorPrescreen(
 export function holdVendorPrescreenOnListen(run: ProductRun, reason: string): ProductRun {
   return {
     ...run,
+    canPay: false,
     decision: "held",
     nextGate: "proxy_wallet",
     blocker: reason,

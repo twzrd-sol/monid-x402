@@ -252,7 +252,7 @@ test("run without confirm quotes and delivers incomplete without calling pay", a
   assert.equal(pays, 0);
 });
 
-test("run confirm without a refuse packet holds and does not pay", async () => {
+test("run confirm without a refuse packet holds the first unpaid seat only", async () => {
   const dir = mkdtempSync(join(tmpdir(), "monid-product-norefuse-"));
   let pays = 0;
   const run = await runVendorPrescreen("https://monid.ai", {
@@ -268,11 +268,64 @@ test("run confirm without a refuse packet holds and does not pay", async () => {
       throw new Error("pay must not run without refuse");
     }
   });
-  assert.equal(run.decision, "held");
+  assert.equal(run.decision, "incomplete");
   assert.equal(run.nextGate, "refuse_required");
+  assert.equal(run.steps[0]?.kind, "spend_gated");
+  assert.equal(run.steps[1]?.kind, "skipped");
   assert.equal(run.deliver.delivered, false);
   assert.equal(run.usdc_spent, 0);
   assert.equal(pays, 0);
+});
+
+test("one refuse packet unlocks only that seat, not the whole SKU", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "monid-product-one-refuse-"));
+  const scrape = vendorPrescreenPlan("https://monid.ai").steps[0];
+  if (!scrape) throw new Error("missing scrape seat");
+  writeFileSync(
+    join(dir, "scrape.json"),
+    `${JSON.stringify({
+      decision: "refuse",
+      provider: scrape.target.provider,
+      endpoint: scrape.target.endpoint
+    })}\n`
+  );
+  let pays = 0;
+  const run = await runVendorPrescreen("https://monid.ai", {
+    confirmSpend: true,
+    requireRefuseDir: dir,
+    privateKey: `0x${"11".repeat(32)}`,
+    fetch: quoteFetch({
+      "/web/scrape/markdown": "10000",
+      "/x402/header-security-check": "59400",
+      "/x402/v2/cookie-scan": "178200"
+    }),
+    pay: async ({ target }) => {
+      pays += 1;
+      return {
+        kind: "paid",
+        receipt: paidReceipt(
+          target,
+          {
+            scheme: "exact",
+            network: "eip155:8453",
+            amount: "10000",
+            asset: USDC_BASE,
+            payTo: MONID_X402_PAY_TO
+          },
+          "https://x402.monid.ai/v1/run",
+          200,
+          "eyJ9"
+        ),
+        body: { title: "Monid", success: true }
+      };
+    }
+  });
+  assert.equal(pays, 1);
+  assert.equal(run.canPay, true);
+  assert.equal(run.steps[0]?.kind, "paid");
+  assert.equal(run.steps[1]?.kind, "spend_gated");
+  assert.equal(run.nextGate, "refuse_required");
+  assert.equal(run.deliver.delivered, false);
 });
 
 test("run confirm with mocked pay delivers the buyer packet", async () => {
@@ -291,6 +344,7 @@ test("run confirm with mocked pay delivers the buyer packet", async () => {
   const run = await runVendorPrescreen("https://monid.ai", {
     confirmSpend: true,
     requireRefuseDir: dir,
+    privateKey: `0x${"11".repeat(32)}`,
     fetch: quoteFetch({
       "/web/scrape/markdown": "10000",
       "/x402/header-security-check": "59400",
@@ -331,7 +385,7 @@ test("run confirm with mocked pay delivers the buyer packet", async () => {
   assert.equal(run.deliver.verdict, "review_required");
   assert.equal(run.usdc_spent, 0.2476);
   assert.equal(run.signer_invocation_count, 3);
-  assert.equal(run.canPay, false);
+  assert.equal(run.canPay, true);
 });
 
 test("run confirm stops after a missing key and skips later seats", async () => {

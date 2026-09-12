@@ -63,11 +63,11 @@
     "decision": "quote",
     "canPay": false,
     "nextGate": "confirm_spend",
-    "blocker": "Quote allowed under cap. Listen has no wallet. Confirm-spend is CLI only.",
-    "nextStep": "Operator runs `product --confirm-spend` only after a refuse packet exists. Do not invent a key.",
+    "blocker": "Quote allowed under cap. Pay is CLI `product --confirm-spend` after a refuse packet for that seat.",
+    "nextStep": "Operator runs `product --confirm-spend` after a refuse packet for each seat being paid.",
     "signer_invocation_count": 0,
     "usdc_spent": 0,
-    "quotedAt": "2026-09-12T17:59:00.662Z"
+    "quotedAt": "2026-09-12T18:13:38.495Z"
   },
   "settlement": {
     "recipient": "monid",
@@ -164,14 +164,14 @@
     },
     "signer_invocation_count": 0,
     "usdc_spent": 0,
-    "capturedAt": "2026-09-12T17:59:00.662Z"
+    "capturedAt": "2026-09-12T18:13:38.496Z"
   },
   "decision": "quoted",
   "canPay": false,
   "nextGate": "confirm_spend",
-  "blocker": "Quote allowed under cap. Listen has no wallet. Confirm-spend is CLI only.",
-  "nextStep": "Operator runs `product --confirm-spend` only after a refuse packet exists. Do not invent a key.",
+  "blocker": "Quote allowed under cap. Pay is CLI `product --confirm-spend` after a refuse packet for that seat.",
+  "nextStep": "Operator runs `product --confirm-spend` after a refuse packet for each seat being paid.",
   "signer_invocation_count": 0,
   "usdc_spent": 0,
-  "capturedAt": "2026-09-12T17:59:00.662Z"
+  "capturedAt": "2026-09-12T18:13:38.495Z"
 }
