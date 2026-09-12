@@ -11,6 +11,8 @@ import { PayGatedError, payRun } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
+import { pagesRoot, startFront } from "./front.js";
+import { scrapePayInput } from "./input.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
 
@@ -28,7 +30,7 @@ function parseInput(): Record<string, unknown> {
   const raw = arg("--input");
   if (!raw) {
     const url = arg("--url");
-    return url ? { queryParams: { url } } : {};
+    return url ? scrapePayInput(url) : {};
   }
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -43,6 +45,14 @@ function targetFromArgs() {
     endpoint: arg("--endpoint", DEFAULT_ENDPOINT)!,
     input: parseInput()
   });
+}
+
+function optionalPrivateKey(): `0x${string}` | undefined {
+  const envKey = process.env.PRIVATE_KEY;
+  if (envKey?.startsWith("0x")) return envKey as `0x${string}`;
+  const file = arg("--key-file", process.env.EVM_PRIVATE_KEY_FILE);
+  if (!file) return undefined;
+  return loadPrivateKey();
 }
 
 function loadPrivateKey(): `0x${string}` {
@@ -128,7 +138,7 @@ async function pay() {
   const maxAmountMicro = BigInt(arg("--max-amount-micro", "10000")!);
   const result = await payRun({
     confirmSpend: true,
-    privateKey: loadPrivateKey(),
+    privateKey: optionalPrivateKey(),
     policy: defaultPolicy({ maxAmountMicro }),
     target: targetFromArgs()
   });
@@ -160,7 +170,7 @@ async function brief() {
     }
     const result = await payRun({
       confirmSpend: true,
-      privateKey: loadPrivateKey(),
+      privateKey: optionalPrivateKey(),
       policy: defaultPolicy({ maxAmountMicro: maxPay }),
       target: step.target
     });
@@ -265,32 +275,10 @@ async function listen() {
 }
 
 async function front() {
-  const { createServer } = await import("node:http");
-  const { readFile } = await import("node:fs/promises");
-  const { extname, join } = await import("node:path");
   const port = Number(arg("--port", "8790"));
-  const root = join(process.cwd(), "pages");
-  const types: Record<string, string> = {
-    ".html": "text/html; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".css": "text/css; charset=utf-8"
-  };
-  const server = createServer(async (req, res) => {
-    const urlPath = req.url?.split("?")[0] ?? "/";
-    const rel = urlPath === "/" ? "index.html" : urlPath.replace(/^\/+/, "");
-    try {
-      const body = await readFile(join(root, rel));
-      res.writeHead(200, { "Content-Type": types[extname(rel)] ?? "application/octet-stream" });
-      res.end(body);
-    } catch {
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ code: 404, message: `no page ${urlPath}` }));
-    }
-  });
-  await new Promise<void>((resolve) => {
-    server.listen(port, "127.0.0.1", () => resolve());
-  });
-  console.error(`monid-x402 front http://127.0.0.1:${port}`);
+  const { port: bound } = await startFront(port, pagesRoot());
+  console.error(`monid-x402 front http://127.0.0.1:${bound}`);
+  console.error("canonical packet: GET /paid.json (not overwritten by refuse)");
 }
 
 async function main() {

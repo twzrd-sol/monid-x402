@@ -43,7 +43,8 @@ export function assertPayAuthorized(input: {
 
 export type PayOptions = {
   confirmSpend: true;
-  privateKey: `0x${string}`;
+  /** Required only after policy allows. Refuse does not need a wallet. */
+  privateKey?: `0x${string}`;
   policy?: Policy;
   target?: RunTarget;
   fetch?: typeof fetch;
@@ -97,15 +98,13 @@ function washRefuseReceipt(
 }
 
 /**
- * Pay path. Local policy runs on the 402 before a signer is constructed.
- * Wash runs next (evaluateWashPayTo). Hook stays registered so a swapped
- * offer still cannot sign.
+ * Pay path. Local policy, then wash, then a key. Wash refuse does not
+ * need a wallet. Hook stays registered so a swapped offer still cannot sign.
  */
 export async function payRun(options: PayOptions): Promise<PayResult> {
   if (options.confirmSpend !== true) {
     throw new PayGatedError("Pay requires confirmSpend: true.");
   }
-  assertPayAuthorized({ confirmSpend: true, privateKey: options.privateKey });
   const target = options.target ?? defaultTarget();
   const policy = options.policy ?? defaultPolicy();
   const fetchImpl = options.fetch ?? globalThis.fetch;
@@ -126,9 +125,14 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
     };
   }
 
+  const key = options.privateKey;
+  if (!key?.startsWith("0x") || key.length < 66) {
+    throw new PayGatedError("Pay requires a 0x PRIVATE_KEY after policy allow. Do not invent one.");
+  }
+
   const selected: X402Accept = verdict.selected;
   try {
-    const paidFetch = buildPaidFetch(options.privateKey, policy, fetchImpl);
+    const paidFetch = buildPaidFetch(key, policy, fetchImpl);
     const response = await paidFetch(MONID_X402_RUN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

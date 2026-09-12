@@ -6,3 +6,4 @@ dist/
 *.pem
 *.key
 wallet.json
+evidence/ledger/*-pay_failed.json

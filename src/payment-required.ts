@@ -86,3 +86,27 @@ export function amountMicro(accept: X402Accept): bigint {
 export function usdcFromMicro(micro: bigint): number {
   return Number(micro) / 1_000_000;
 }
+
+export type PaymentProof = {
+  success: boolean;
+  payer: string | null;
+  transaction: string | null;
+  network: string | null;
+};
+
+/** Decode x402 PAYMENT-RESPONSE. Fail closed to null — never throw on a bad header. */
+export function decodePaymentResponse(header: string | null): PaymentProof | null {
+  if (!header) return null;
+  try {
+    const parsed: unknown = JSON.parse(Buffer.from(header, "base64").toString("utf8"));
+    if (!isRecord(parsed)) return null;
+    return {
+      success: parsed.success === true,
+      payer: typeof parsed.payer === "string" ? parsed.payer : null,
+      transaction: typeof parsed.transaction === "string" ? parsed.transaction : null,
+      network: typeof parsed.network === "string" ? parsed.network : null
+    };
+  } catch {
+    return null;
+  }
+}

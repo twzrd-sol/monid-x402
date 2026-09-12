@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import {
   decodePaymentRequiredHeader,
+  decodePaymentResponse,
   parsePaymentRequired
 } from "./payment-required.js";
 import { MONID_X402_PAY_TO, NETWORK_BASE, NETWORK_MONAD } from "./constants.js";
@@ -35,4 +36,21 @@ test("round-trips a PAYMENT-REQUIRED header", () => {
 
 test("rejects a non-v2 body", () => {
   assert.throws(() => parsePaymentRequired({ x402Version: 1, resource: {}, accepts: [] }), /x402Version/);
+});
+
+test("decodePaymentResponse reads payer and tx; junk is null", () => {
+  const header = Buffer.from(
+    JSON.stringify({
+      success: true,
+      payer: "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F",
+      transaction: "0x4a87dcf19dfc90a095ea467f7f2e155427e981183a4086efde4c75767df4517e",
+      network: "eip155:8453"
+    }),
+    "utf8"
+  ).toString("base64");
+  const proof = decodePaymentResponse(header);
+  assert.equal(proof?.success, true);
+  assert.equal(proof?.payer?.startsWith("0x14df"), true);
+  assert.equal(decodePaymentResponse("not-base64"), null);
+  assert.equal(decodePaymentResponse(null), null);
 });

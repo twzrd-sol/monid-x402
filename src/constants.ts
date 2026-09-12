@@ -19,6 +19,7 @@ export const DEFAULT_PROVIDER = "context.dev";
 export const DEFAULT_ENDPOINT = "/web/scrape/markdown";
 
 export const REFUSE_SCHEMA = "twzrd.gate_eval_refuse.v1";
+export const SPEND_GATED_SCHEMA = "twzrd.gate_eval_spend_gated.v1";
 export const PAID_SCHEMA = "twzrd.gate_eval_paid.v1";
 export const PAY_FAILED_SCHEMA = "twzrd.gate_eval_pay_failed.v1";
 export const RAIL = "monid-x402";
