@@ -1,0 +1,41 @@
+{
+  "verdict": "valid",
+  "gradedAt": "2026-09-12T08:14:59Z",
+  "crawledAt": "2026-09-12T08:14:22.887Z",
+  "x402": 31,
+  "drifted": 0,
+  "checks": [
+    {
+      "id": "live_post_is_402",
+      "pass": true,
+      "detail": "POST https://x402.monid.ai/v1/run returned HTTP 402 with Payment-Required; no PAYMENT-SIGNATURE / payment header sent"
+    },
+    {
+      "id": "refuse_zero_sign_zero_spend",
+      "pass": true,
+      "detail": "3 ledger refuse packets have signer_invocation_count 0 and usdc_spent 0",
+      "witnesses": [
+        "evidence/ledger/2026-09-12T034010355Z-refuse.json",
+        "evidence/ledger/2026-09-12T034459893Z-refuse.json",
+        "evidence/ledger/2026-09-12T034500123Z-refuse.json"
+      ]
+    },
+    {
+      "id": "paid_one_sign_positive_spend_200",
+      "pass": true,
+      "detail": "3 ledger paid packets have signer_invocation_count 1, usdc_spent > 0, http_status 200; live-pay-200.json matches 034126374Z",
+      "witnesses": [
+        "evidence/ledger/2026-09-12T034126374Z-paid.json",
+        "evidence/ledger/2026-09-12T034507262Z-paid.json",
+        "evidence/ledger/2026-09-12T034517296Z-paid.json",
+        "evidence/live-pay-200.json"
+      ]
+    },
+    {
+      "id": "no_prepaid_api_monid_resource",
+      "pass": true,
+      "detail": "no packet resource is api.monid.ai/v1/run; named resources are https://x402.monid.ai/v1/run"
+    }
+  ],
+  "listen": "http://127.0.0.1:8788"
+}

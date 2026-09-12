@@ -1,0 +1,121 @@
+{
+  "packets": [
+    {
+      "name": "2026-09-12T034010355Z-refuse.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:40:10.355Z"
+    },
+    {
+      "name": "2026-09-12T034013954Z-paid.json",
+      "decision": "paid",
+      "schema": "twzrd.gate_eval_paid.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:40:13.953Z"
+    },
+    {
+      "name": "2026-09-12T034028679Z-pay_failed.json",
+      "decision": "pay_failed",
+      "schema": "twzrd.gate_eval_pay_failed.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:40:28.679Z"
+    },
+    {
+      "name": "2026-09-12T034059317Z-pay_failed.json",
+      "decision": "pay_failed",
+      "schema": "twzrd.gate_eval_pay_failed.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:40:59.317Z"
+    },
+    {
+      "name": "2026-09-12T034112725Z-pay_failed.json",
+      "decision": "pay_failed",
+      "schema": "twzrd.gate_eval_pay_failed.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:41:12.725Z"
+    },
+    {
+      "name": "2026-09-12T034126374Z-paid.json",
+      "decision": "paid",
+      "schema": "twzrd.gate_eval_paid.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:41:26.373Z"
+    },
+    {
+      "name": "2026-09-12T034459893Z-refuse.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "provider": "context.dev",
+      "endpoint": "/brand/retrieve",
+      "capturedAt": "2026-09-12T03:44:59.893Z"
+    },
+    {
+      "name": "2026-09-12T034500123Z-refuse.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:45:00.123Z"
+    },
+    {
+      "name": "2026-09-12T034501096Z-pay_failed.json",
+      "decision": "pay_failed",
+      "schema": "twzrd.gate_eval_pay_failed.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0,
+      "provider": "context.dev",
+      "endpoint": "/brand/retrieve",
+      "capturedAt": "2026-09-12T03:45:01.096Z"
+    },
+    {
+      "name": "2026-09-12T034507262Z-paid.json",
+      "decision": "paid",
+      "schema": "twzrd.gate_eval_paid.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:45:07.262Z"
+    },
+    {
+      "name": "2026-09-12T034517296Z-paid.json",
+      "decision": "paid",
+      "schema": "twzrd.gate_eval_paid.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "provider": "context.dev",
+      "endpoint": "/brand/retrieve",
+      "capturedAt": "2026-09-12T03:45:17.296Z"
+    }
+  ],
+  "totals": {
+    "refuse": 3,
+    "paid": 4,
+    "pay_failed": 4,
+    "usdc_spent_sum": 0.04,
+    "signer_invocations_sum": 8
+  }
+}

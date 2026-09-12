@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>monid-x402 — refuse then pay</title>
-  <meta name="description" content="Pre-sign gate on Monid's live x402 run host. Refuse is the default. Pay is a later, confirmed spend.">
+  <title>monid-x402 — week 1-2 door + grade</title>
+  <meta name="description" content="Default Path week 1 door and week 2 grade. Catalog size is not adoption. Not tool-audit. Not Solana. TWZRD is not a Monid provider.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -43,6 +43,12 @@
       line-height: 1.1;
       text-wrap: balance;
       margin: 8px 0 16px;
+    }
+    h2 {
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 28px 0 8px;
     }
     p { color: var(--ink-soft); max-width: 62ch; }
     .grid { display: grid; gap: 12px; margin: 28px 0; }
@@ -92,56 +98,60 @@
 </head>
 <body>
   <main>
-    <p class="kicker">monid-x402 · not the prepaid film · not Solana</p>
-    <h1>Refuse first. Pay only after the packet exists and you confirm spend.</h1>
-    <p>This page is the new front for the live <code>x402.monid.ai/v1/run</code> rail. It is not <code>tool-audit</code>. Catalog size is inventory, not adoption. TWZRD is not listed as a Monid provider. High-TA loop: <a href="./brief.html">company brief</a>. Week 1-2: <a href="./week12.html">door + grade</a>.</p>
-    <p class="note">Proxy listen: <code>MONID_API_BASE_URL=http://127.0.0.1:8788</code>. Front listen: <code>http://127.0.0.1:8790</code>. Stale <code>:8787</code> film left alone.</p>
+    <p class="kicker">default path · week 1-2 · not tool-audit · not Solana</p>
+    <h1>Door for other agents. Honest grade after. Catalog size is not adoption.</h1>
+    <p>This is the week 1-2 film for <code>monid-x402</code>. It is not the prepaid <code>tool-audit</code> surface and not a Solana pin. TWZRD is not a Monid provider. A 40-row catalog is inventory, not a buyer.</p>
+    <p>Week 1 is the door: fleet workers post only to <code>MONID_API_BASE_URL</code> (default <code>http://127.0.0.1:8788</code>), never prepaid <code>api.monid.ai/v1/run</code>. <code>GET /health</code> on that listen tells 8788 from the stale 8787 film. Leave pid 915170 alone.</p>
+    <p>Week 2 is the grade: an independent verifier that did not write the proxy. This page fetches <code>./week12.json</code>. If verify has not landed, the status stays <code>pending_verify</code>. That is the grade, not a pass.</p>
+    <p class="note"><a href="./">Paid receipt</a> · <a href="./brief.html">company brief</a> · listen <code>127.0.0.1:8788</code></p>
     <section class="grid three">
       <article class="card">
         <dl>
-          <dt>Catalog</dt>
-          <dd>40 / 31 / 6 / 3</dd>
+          <dt>Week 1 door</dt>
+          <dd>8788</dd>
         </dl>
-        <p class="note">seeds / x402 / 404 / prepaid-only</p>
-      </article>
-      <article class="card" id="decision-card">
-        <dl>
-          <dt>Latest decision</dt>
-          <dd id="decision">loading</dd>
-        </dl>
-        <p class="note" id="schema"></p>
+        <p class="note"><code>GET /health</code> vs 8787 film</p>
       </article>
       <article class="card live">
         <dl>
-          <dt>Signer / spent</dt>
-          <dd id="spend">—</dd>
+          <dt>Week 2 grade</dt>
+          <dd id="grade">loading</dd>
         </dl>
-        <p class="note" id="resource"></p>
+        <p class="note" id="listen"></p>
+      </article>
+      <article class="card">
+        <dl>
+          <dt>Fleet target</dt>
+          <dd>BASE_URL</dd>
+        </dl>
+        <p class="note">POST only <code>MONID_API_BASE_URL</code></p>
       </article>
     </section>
-    <p><span class="badge" id="badge">waiting on pages/data.json</span></p>
+    <p><span class="badge" id="badge">waiting on pages/week12.json</span></p>
+    <h2>Checks</h2>
+    <p class="note" id="checks-note">No verify packet yet.</p>
     <pre id="packet">{}</pre>
   </main>
   <script>
-    fetch("./data.json", { cache: "no-store" })
+    fetch("./week12.json", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
-        document.getElementById("decision").textContent = d.decision || "unknown";
-        document.getElementById("schema").textContent = d.schema || "";
-        document.getElementById("spend").textContent =
-          String(d.signer_invocation_count ?? "—") + " / $" + String(d.usdc_spent ?? "—");
-        document.getElementById("resource").textContent = d.resource || "";
-        document.getElementById("badge").textContent = (d.code || d.decision || "packet") + "";
-        if (d.payment_response) {
-          try {
-            d.payment_decoded = JSON.parse(atob(d.payment_response));
-          } catch (e) { /* leave encoded */ }
+        var grade = d.verdict || d.status || "unknown";
+        document.getElementById("grade").textContent = grade;
+        document.getElementById("listen").textContent = d.listen || "";
+        document.getElementById("badge").textContent = grade;
+        var note = document.getElementById("checks-note");
+        if (d.checks) {
+          var n = Array.isArray(d.checks) ? d.checks.length : Object.keys(d.checks).length;
+          note.textContent = n + " check(s) from verify";
+        } else {
+          note.textContent = "No verify packet. evidence/verify/week2.json was not present.";
         }
         document.getElementById("packet").textContent = JSON.stringify(d, null, 2);
       })
       .catch(() => {
-        document.getElementById("decision").textContent = "no packet";
-        document.getElementById("badge").textContent = "missing data.json";
+        document.getElementById("grade").textContent = "no packet";
+        document.getElementById("badge").textContent = "missing week12.json";
       });
   </script>
 </body>

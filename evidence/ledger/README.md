@@ -1,0 +1,1 @@
+This directory is an append-only ledger of refuse, paid, and pay_failed packets: new files may be added, existing `*-refuse.json`, `*-paid.json`, and `*-pay_failed.json` packets are never overwritten, and INDEX.json only catalogs what is already on disk. Catalog size is not adoption. Paid packets are settlement receipts on this rail, not a second tool-audit film.
