@@ -24,7 +24,7 @@ docs plus `src/proxy.ts`. `tool-audit` is off limits.
 | `spend_gated` | 403 | Policy allow, no confirm header, or confirm with no proxy wallet |
 | discover/inspect | upstream | Pass-through |
 | `GET /v1/runs` | 501 | prepaid list; do not forward |
-| `GET /v1/runs/:id` | 402 | SIWX retrieve refuse (`siwx_no_pay_offer`); no signer |
+| `GET /v1/runs/:id` | 402 | SIWX retrieve refuse (`siwx_no_pay_offer`) unless confirm-sign + listen key |
 
 ## `GET /health`
 
@@ -49,7 +49,9 @@ still 403, CLI `decision` (no signer). Listen failures on ledger write do
 not change the HTTP decision. `INDEX.json` is derived. `--confirm-spend`
 requires a refuse packet on disk.
 
-Closed week 3: `GET /v1/runs/:id` probes `x402.monid.ai/v1/runs/:id`,
-refuses SIWX with empty `accepts[]`, never signs. List stays 501.
+Closed week 3: unsigned `GET /v1/runs/:id` refuses SIWX. List stays 501.
 
-Still later: SIWX identity sign, prepaid list, Solana, a proxy wallet.
+Closed week 5: confirm-sign + `MONID_LISTEN_PRIVATE_KEY` signs SIWX.
+Default listen still has no wallet.
+
+Still later: default listen wallet, prepaid list, Solana.

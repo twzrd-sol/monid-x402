@@ -23,4 +23,5 @@ export const REFUSE_SCHEMA = "twzrd.gate_eval_refuse.v1";
 export const SPEND_GATED_SCHEMA = "twzrd.gate_eval_spend_gated.v1";
 export const PAID_SCHEMA = "twzrd.gate_eval_paid.v1";
 export const PAY_FAILED_SCHEMA = "twzrd.gate_eval_pay_failed.v1";
+export const RETRIEVED_SCHEMA = "twzrd.gate_eval_retrieved.v1";
 export const RAIL = "monid-x402";

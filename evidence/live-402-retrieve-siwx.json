@@ -20,6 +20,8 @@
           "domain": "x402.monid.ai",
           "uri": "http://x402.monid.ai/x402/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
           "version": "1",
+          "nonce": "testnonce0123456789abcdef",
+          "issuedAt": "2026-09-12T17:56:32.621Z",
           "statement": "Sign in to access your run results"
         },
         "supportedChains": [

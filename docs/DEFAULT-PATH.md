@@ -119,5 +119,18 @@ proved the whole 8788 walk, and doctor/fleet only checked POST /v1/run.
 
 No new film. No proxy wallet. No extra spend.
 
-Still later: SIWX identity sign (only if policy ever sees a payable
-accept), proxy wallet, Solana, a second partner.
+## Week 5 (SIWX sign + retrieve)
+
+Operator lifted the identity-sign hold. Unauthenticated GET still refuses
+`siwx_no_pay_offer`. Confirmed retrieve signs CAIP-122 / EIP-191 and sends
+`SIGN-IN-WITH-X`. That is not a USDC pay (`usdc_spent: 0`, signer 1).
+
+```bash
+node dist/cli.js retrieve --confirm-sign --run-id <ULID> --key-file <evm.json>
+```
+
+`--confirm-spend` also unlocks retrieve sign. Listen stays refuse-only
+unless `MONID_LISTEN_PRIVATE_KEY` is set and the caller sends
+`X-TWZRD-Confirm-Sign`. Fleet/e2e/doctor still prove the unsigned door.
+
+Still later: default listen wallet, Solana, a second partner.

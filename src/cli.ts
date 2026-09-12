@@ -17,7 +17,7 @@ import { defaultTarget, probeRun402 } from "./probe.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
 import { DEFAULT_E2E_RUN_ID, proveListenE2E, writeWeek4 } from "./e2e.js";
-import { probeRetrieve402, retrieveRefuse } from "./retrieve.js";
+import { probeRetrieve402, retrieveRefuse, retrieveSigned } from "./retrieve.js";
 import { gradeDefaultPath, gradeWeek3 } from "./verify.js";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -309,12 +309,18 @@ function defaultRunId(): string {
 }
 
 async function retrieve() {
-  if (flag("--confirm-spend")) {
-    throw new PayGatedError(
-      "Retrieve SIWX is not a USDC pay. Confirm-spend does not sign identity. Refuse is the week-3 hold."
-    );
-  }
   const runId = defaultRunId();
+  if (flag("--confirm-sign") || flag("--confirm-spend")) {
+    const result = await retrieveSigned({
+      runId,
+      confirmSign: true,
+      privateKey: loadPrivateKey()
+    });
+    const out = writePacket(result.receipt);
+    console.log(JSON.stringify({ out, ...result }, null, 2));
+    if (result.kind !== "retrieved") process.exitCode = 2;
+    return;
+  }
   const probe = await probeRetrieve402(runId);
   const receipt = retrieveRefuse(probe);
   const out = writePacket(receipt);

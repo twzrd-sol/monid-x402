@@ -118,3 +118,6 @@ That is not a USDC offer. `retrieve` writes a refuse packet. Do not pass
 
 Week 4 E2E: `npm run e2e:listen` walks health → refuse → spend_gated →
 confirm-still-gated → SIWX retrieve refuse → list 501 on 8788. Signer 0.
+
+Week 5: `retrieve --confirm-sign --key-file` signs SIWX and reads the run.
+That is identity, not a new USDC debit. Do not commit the key.

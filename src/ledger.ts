@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 export const LEDGER_SCHEMA = "monid-x402.ledger.v1" as const;
 
-export type LedgerKind = "refuse" | "spend_gated" | "paid" | "pay_failed";
+export type LedgerKind = "refuse" | "spend_gated" | "paid" | "pay_failed" | "retrieved";
 
 export type LedgerRecord = {
   schema: typeof LEDGER_SCHEMA;
@@ -50,6 +50,7 @@ export type LedgerIndex = {
     mislabeled_paid: number;
     pay_failed: number;
     spend_gated: number;
+    retrieved: number;
     usdc_spent_sum: number;
     signer_invocations_sum: number;
   };
@@ -159,6 +160,7 @@ export function rebuildLedgerIndex(dir: string): LedgerIndex {
       mislabeled_paid: packets.filter((row) => row.decision === "paid" && !row.settled).length,
       pay_failed: packets.filter((row) => row.decision === "pay_failed").length,
       spend_gated: packets.filter((row) => row.decision === "spend_gated").length,
+      retrieved: packets.filter((row) => row.decision === "retrieved").length,
       usdc_spent_sum: packets
         .filter((row) => row.settled)
         .reduce((sum, row) => sum + (row.usdc_spent ?? 0), 0),
@@ -226,6 +228,7 @@ export function ledgerKindFromBody(body: unknown): LedgerKind {
   const rec = body as { decision?: string; code?: string };
   if (rec.decision === "spend_gated" || rec.code === "spend_gated") return "spend_gated";
   if (rec.decision === "paid" || rec.code === "paid") return "paid";
+  if (rec.decision === "retrieved" || rec.code === "retrieved") return "retrieved";
   if (rec.decision === "pay_failed" || rec.code === "pay_failed" || rec.code === "insufficient_funds") {
     return "pay_failed";
   }
