@@ -58,6 +58,7 @@ test("allow without confirm is 403 spend_gated, not 409", async () => {
   const body = result.body as { code?: string; decision?: string; signer_invocation_count?: number };
   assert.equal(body.code, "spend_gated");
   assert.equal(body.decision, "spend_gated");
+  assert.equal((body as { schema?: string }).schema, "twzrd.gate_eval_spend_gated.v1");
   assert.equal(body.signer_invocation_count, 0);
   assert.ok(!JSON.stringify(result.body).includes(MONID_API_URL));
 });

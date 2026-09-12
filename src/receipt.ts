@@ -1,5 +1,5 @@
-import { PAID_SCHEMA, PAY_FAILED_SCHEMA, RAIL, REFUSE_SCHEMA } from "./constants.js";
-import { amountMicro, usdcFromMicro } from "./payment-required.js";
+import { PAID_SCHEMA, PAY_FAILED_SCHEMA, RAIL, REFUSE_SCHEMA, SPEND_GATED_SCHEMA } from "./constants.js";
+import { amountMicro, decodePaymentResponse, usdcFromMicro } from "./payment-required.js";
 import type {
   OfferSlice,
   PaidReceipt,
@@ -7,6 +7,7 @@ import type {
   PolicyDecision,
   RefuseReceipt,
   RunTarget,
+  SpendGatedReceipt,
   X402Accept
 } from "./types.js";
 
@@ -53,9 +54,9 @@ export function spendGatedReceipt(
   resourceUrl: string,
   reason: string,
   capturedAt = new Date().toISOString()
-): Record<string, unknown> {
+): SpendGatedReceipt {
   return {
-    schema: REFUSE_SCHEMA,
+    schema: SPEND_GATED_SCHEMA,
     rail: RAIL,
     resource: resourceUrl,
     provider: target.provider,
@@ -77,6 +78,7 @@ export function paidReceipt(
   paymentResponse: string | null,
   capturedAt = new Date().toISOString()
 ): PaidReceipt {
+  const proof = decodePaymentResponse(paymentResponse);
   return {
     schema: PAID_SCHEMA,
     rail: RAIL,
@@ -87,6 +89,9 @@ export function paidReceipt(
     decision: "paid",
     http_status: httpStatus,
     payment_response: paymentResponse,
+    payer: proof?.payer ?? null,
+    transaction: proof?.transaction ?? null,
+    network: proof?.network ?? selected.network,
     signer_invocation_count: 1,
     usdc_spent: usdcFromMicro(amountMicro(selected)),
     capturedAt
