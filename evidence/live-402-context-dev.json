@@ -1,0 +1,135 @@
+{
+  "capturedAt": "2026-09-12T01:46:18Z",
+  "httpStatus": 402,
+  "request": {
+    "provider": "context.dev",
+    "endpoint": "/web/scrape/markdown"
+  },
+  "paymentRequired": {
+    "x402Version": 2,
+    "error": "Payment required",
+    "resource": {
+      "url": "https://x402.monid.ai/v1/run",
+      "description": "Execute a data endpoint",
+      "mimeType": "application/json"
+    },
+    "accepts": [
+      {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "amount": "10000",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+        "maxTimeoutSeconds": 2100,
+        "extra": {
+          "name": "USD Coin",
+          "version": "2"
+        }
+      },
+      {
+        "scheme": "exact",
+        "network": "eip155:143",
+        "amount": "10000",
+        "asset": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+        "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+        "maxTimeoutSeconds": 2100,
+        "extra": {
+          "name": "USDC",
+          "version": "2"
+        }
+      }
+    ],
+    "extensions": {
+      "sign-in-with-x": {
+        "info": {
+          "domain": "x402.monid.ai",
+          "uri": "https://x402.monid.ai/v1/run",
+          "version": "1",
+          "nonce": "cdbe2227abf228cd410e2c3075a417a1",
+          "issuedAt": "2026-09-12T01:46:18.344Z",
+          "resources": [
+            "https://x402.monid.ai/v1/run"
+          ],
+          "statement": "Sign in to access your run results"
+        },
+        "supportedChains": [
+          {
+            "chainId": "eip155:8453",
+            "type": "eip191"
+          },
+          {
+            "chainId": "eip155:143",
+            "type": "eip191"
+          }
+        ],
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string"
+            },
+            "address": {
+              "type": "string"
+            },
+            "statement": {
+              "type": "string"
+            },
+            "uri": {
+              "type": "string",
+              "format": "uri"
+            },
+            "version": {
+              "type": "string"
+            },
+            "chainId": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "nonce": {
+              "type": "string"
+            },
+            "issuedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "expirationTime": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "notBefore": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "requestId": {
+              "type": "string"
+            },
+            "resources": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "signature": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "domain",
+            "address",
+            "uri",
+            "version",
+            "chainId",
+            "type",
+            "nonce",
+            "issuedAt",
+            "signature"
+          ]
+        }
+      }
+    }
+  }
+}

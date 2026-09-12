@@ -1,0 +1,38 @@
+{
+  "name": "monid-x402",
+  "version": "0.1.0",
+  "description": "Pre-sign spend gate for Monid's live x402 run host. inspect → policy → 402 → refuse or pay.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "monid-x402": "./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test dist/*.test.js",
+    "probe:live": "npm run build && node dist/cli.js probe",
+    "refuse:live": "npm run build && node dist/cli.js refuse --max-amount-micro 1"
+  },
+  "keywords": [
+    "x402",
+    "monid",
+    "pre-sign",
+    "spend-gate"
+  ],
+  "author": "twzrd",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@x402/core": "^2.25.0",
+    "@x402/evm": "^2.25.0",
+    "@x402/fetch": "^2.25.0",
+    "viem": "^2.56.3"
+  }
+}
