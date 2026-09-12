@@ -1,17 +1,18 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { tempDir } from "./helpers/tmpdir.js";
 import { doctor } from "./doctor.js";
 import { PINNED_NETWORKS, PINNED_PAY_TO } from "./drift.js";
 
 const matrixPath = join(dirname(fileURLToPath(import.meta.url)), "../evidence/catalog-matrix.json");
 
 test("doctor fails closed when health is down and PRIVATE_KEY is set", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-doctor-"));
+  const dir = tempDir("monid-doctor-");
   writeFileSync(
     join(dir, "a-refuse.json"),
     JSON.stringify({
@@ -38,7 +39,7 @@ test("doctor fails closed when health is down and PRIVATE_KEY is set", async () 
 });
 
 test("doctor passes a healthy listen with refuse on disk and no key", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-doctor-"));
+  const dir = tempDir("monid-doctor-");
   writeFileSync(
     join(dir, "a-refuse.json"),
     JSON.stringify({
@@ -92,7 +93,7 @@ test("doctor passes a healthy listen with refuse on disk and no key", async () =
 });
 
 test("doctor fails when listen retrieve is still the prepaid 501 list", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-doctor-"));
+  const dir = tempDir("monid-doctor-");
   writeFileSync(
     join(dir, "a-refuse.json"),
     JSON.stringify({

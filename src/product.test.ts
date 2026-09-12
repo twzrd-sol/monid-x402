@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { tempDir } from "./helpers/tmpdir.js";
 import { MONID_X402_RUN_URL } from "./constants.js";
 import { MONID_X402_PAY_TO, USDC_BASE } from "./constants.js";
 import { PayGatedError } from "./pay.js";
@@ -253,7 +254,7 @@ test("run without confirm quotes and delivers incomplete without calling pay", a
 });
 
 test("run confirm without a refuse packet holds the first unpaid seat only", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-product-norefuse-"));
+  const dir = tempDir("monid-product-norefuse-");
   let pays = 0;
   const run = await runVendorPrescreen("https://monid.ai", {
     confirmSpend: true,
@@ -278,7 +279,7 @@ test("run confirm without a refuse packet holds the first unpaid seat only", asy
 });
 
 test("one refuse packet unlocks only that seat, not the whole SKU", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-product-one-refuse-"));
+  const dir = tempDir("monid-product-one-refuse-");
   const scrape = vendorPrescreenPlan("https://monid.ai").steps[0];
   if (!scrape) throw new Error("missing scrape seat");
   writeFileSync(
@@ -329,7 +330,7 @@ test("one refuse packet unlocks only that seat, not the whole SKU", async () => 
 });
 
 test("run confirm with mocked pay delivers the buyer packet", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-product-refuse-"));
+  const dir = tempDir("monid-product-refuse-");
   for (const step of vendorPrescreenPlan("https://monid.ai").steps) {
     writeFileSync(
       join(dir, `${step.role}.json`),
