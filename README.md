@@ -35,6 +35,7 @@ npm test
 npm run probe:live
 npm run refuse:live
 npm run decision:live
+npm run decision:listen
 npm run catalog:live
 npm run listen
 npm run front
@@ -49,6 +50,8 @@ Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
 the signer is constructed, and again on `onBeforePaymentCreation`.
 `decision:live` probes the live 402 and prints a `monid-x402.pay-path.v1`
 verdict. It never constructs a signer.
+`decision:listen` POSTs the 8788 pin (`MONID_API_BASE_URL`) and exits 0
+only on HTTP 402 `over_cap` with `signer_invocation_count: 0`. No wallet.
 Do not run pay for this tree unless a refuse receipt already exists.
 Do not commit a key.
 
