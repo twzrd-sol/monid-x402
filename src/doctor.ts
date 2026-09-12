@@ -1,5 +1,6 @@
 import { MONID_API_URL } from "./constants.js";
 import { checkMatrix, loadMatrix } from "./drift.js";
+import { DEFAULT_E2E_RUN_ID } from "./e2e.js";
 import { rebuildLedgerIndex } from "./ledger.js";
 
 export type DoctorCheck = { id: string; pass: boolean; detail: string };
@@ -20,6 +21,7 @@ export async function doctor(options: {
   matrixPath?: string;
   env?: NodeJS.ProcessEnv;
   fetchImpl?: typeof fetch;
+  runId?: string;
 }): Promise<DoctorReport> {
   const env = options.env ?? process.env;
   const healthUrl = options.healthUrl ?? `${(env.MONID_API_BASE_URL ?? "http://127.0.0.1:8788").replace(/\/$/, "")}/health`;
@@ -94,6 +96,34 @@ export async function doctor(options: {
     pass: privateKey === "unset",
     detail: `PRIVATE_KEY ${privateKey}`
   });
+
+  const listenBase = healthUrl.replace(/\/health\/?$/, "");
+  const runId = options.runId ?? env.MONID_RUN_ID ?? DEFAULT_E2E_RUN_ID;
+  try {
+    const retrieve = await fetchImpl(`${listenBase}/v1/runs/${runId}`);
+    const body = (await retrieve.json().catch(() => ({}))) as Record<string, unknown>;
+    checks.push({
+      id: "retrieve_siwx",
+      pass:
+        retrieve.status === 402 &&
+        body.code === "siwx_no_pay_offer" &&
+        body.signer_invocation_count === 0 &&
+        body.usdc_spent === 0,
+      detail: `GET /v1/runs/${runId} HTTP ${retrieve.status} code=${String(body.code)}`
+    });
+    const list = await fetchImpl(`${listenBase}/v1/runs`);
+    checks.push({
+      id: "runs_list_501",
+      pass: list.status === 501,
+      detail: `GET /v1/runs HTTP ${list.status} (prepaid list stays 501)`
+    });
+  } catch (error) {
+    checks.push({
+      id: "retrieve_siwx",
+      pass: false,
+      detail: error instanceof Error ? error.message : "retrieve failed"
+    });
+  }
 
   const listen = String(health?.listen ?? "down");
   return {

@@ -16,6 +16,7 @@ import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
+import { DEFAULT_E2E_RUN_ID, proveListenE2E, writeWeek4 } from "./e2e.js";
 import { probeRetrieve402, retrieveRefuse } from "./retrieve.js";
 import { gradeDefaultPath, gradeWeek3 } from "./verify.js";
 
@@ -282,6 +283,16 @@ function indexLedger() {
   console.log(JSON.stringify({ dir, totals: report.totals }, null, 2));
 }
 
+async function e2e() {
+  const proof = await proveListenE2E({
+    baseUrl: arg("--base", process.env.MONID_API_BASE_URL ?? "http://127.0.0.1:8788"),
+    runId: arg("--run-id") ?? DEFAULT_E2E_RUN_ID
+  });
+  const out = writeWeek4(process.cwd(), proof);
+  writeFileSync("evidence/live-e2e.json", `${JSON.stringify(proof, null, 2)}\n`);
+  console.log(JSON.stringify({ out, proof }, null, 2));
+}
+
 function defaultRunId(): string {
   const fromArg = arg("--run-id");
   if (fromArg) return fromArg;
@@ -365,10 +376,11 @@ async function main() {
   if (command === "brief") return brief();
   if (command === "index") return indexLedger();
   if (command === "retrieve") return retrieve();
+  if (command === "e2e") return e2e();
   if (command === "verify") return verify();
   if (command === "doctor") return doctorCmd();
   console.error(
-    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|listen|front|brief|index|verify|doctor>"
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|retrieve|e2e|listen|front|brief|index|verify|doctor>"
   );
   process.exitCode = 2;
 }

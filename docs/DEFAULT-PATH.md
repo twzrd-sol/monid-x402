@@ -106,5 +106,18 @@ USDC offer. Policy refuses `siwx_no_pay_offer`. Signer stays 0.
 
 Do not sign SIWX. Confirm-spend does not unlock retrieve. No new film.
 
+## Week 4 (listen E2E door)
+
+The week-3 routes worked by hand. Other agents had no single command that
+proved the whole 8788 walk, and doctor/fleet only checked POST /v1/run.
+
+1. `proveListenE2E` / `npm run e2e:listen`: health, over_cap refuse,
+   spend_gated, confirm-still-gated, SIWX retrieve refuse, list 501.
+   Signer 0. Not 8787. Not prepaid.
+2. `doctor` fails if retrieve is still 501.
+3. Fleet worker POSTs refuse then GETs retrieve. No spend path.
+
+No new film. No proxy wallet. No extra spend.
+
 Still later: SIWX identity sign (only if policy ever sees a payable
 accept), proxy wallet, Solana, a second partner.

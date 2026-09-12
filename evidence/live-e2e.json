@@ -1,0 +1,44 @@
+{
+  "schema": "monid-x402.listen-e2e.v1",
+  "listen": "http://127.0.0.1:8788",
+  "runId": "01M2BC306GSMD00DZZAPNSCSAZ",
+  "ok": true,
+  "signer_invocation_count": 0,
+  "usdc_spent": 0,
+  "steps": {
+    "health": {
+      "status": 200
+    },
+    "run_refuse": {
+      "status": 402,
+      "code": "over_cap",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0
+    },
+    "spend_gated": {
+      "status": 403,
+      "code": "spend_gated",
+      "schema": "twzrd.gate_eval_spend_gated.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0
+    },
+    "confirm_still_gated": {
+      "status": 403,
+      "code": "spend_gated",
+      "schema": "twzrd.gate_eval_spend_gated.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0
+    },
+    "retrieve": {
+      "status": 402,
+      "code": "siwx_no_pay_offer",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0
+    },
+    "list": {
+      "status": 501
+    }
+  }
+}
