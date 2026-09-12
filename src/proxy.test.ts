@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { tempDir } from "./helpers/tmpdir.js";
 import { MONID_API_URL, MONID_X402_RUN_URL } from "./constants.js";
 import { handleProxyRequest, PREPAID_RUN_URL, assertNotPrepaid, startProxy } from "./proxy.js";
 
@@ -210,7 +211,7 @@ test("allow + confirm is still 403; week 0 has no proxy wallet", async () => {
 });
 
 test("run decisions append ledger files and never overwrite", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-proxy-ledger-"));
+  const dir = tempDir("monid-proxy-ledger-");
   const first = await handleProxyRequest(
     "POST",
     "/v1/run",

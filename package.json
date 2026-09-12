@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test dist/*.test.js fleet/worker.test.mjs",
+    "test": "npm run build && node scripts/reap-tmp-run.mjs --test dist/*.test.js fleet/worker.test.mjs",
     "probe:live": "npm run build && node dist/cli.js probe",
     "refuse:live": "npm run build && node dist/cli.js refuse --max-amount-micro 1",
     "decision:live": "npm run build && node dist/cli.js decision",

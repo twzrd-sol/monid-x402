@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { tempDir } from "./helpers/tmpdir.js";
 import {
   appendLedger,
   hasRefusePacket,
@@ -13,7 +14,7 @@ import {
 } from "./ledger.js";
 
 test("appendLedger writes a new json file and refuses overwrite", () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-ledger-"));
+  const dir = tempDir("monid-ledger-");
   const first = appendLedger(dir, {
     kind: "refuse",
     httpStatus: 402,
@@ -39,7 +40,7 @@ test("appendLedger writes a new json file and refuses overwrite", () => {
 });
 
 test("appendLedger creates the directory and never writes a paid packet in week 0 tests", () => {
-  const parent = mkdtempSync(join(tmpdir(), "monid-ledger-parent-"));
+  const parent = tempDir("monid-ledger-parent-");
   const dir = join(parent, "evidence", "ledger");
   mkdirSync(join(parent, "evidence"), { recursive: true });
   const path = appendLedger(dir, {
@@ -53,7 +54,7 @@ test("appendLedger creates the directory and never writes a paid packet in week 
 });
 
 test("legacy { decision } packets keep top-level decision for INDEX.json", () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-ledger-legacy-"));
+  const dir = tempDir("monid-ledger-legacy-");
   const path = appendLedger(dir, {
     decision: "refuse",
     schema: "twzrd.gate_eval_refuse.v1",
@@ -104,7 +105,7 @@ test("packetSettled requires paid 200 plus PAYMENT-RESPONSE", () => {
 });
 
 test("INDEX sums only settled paid packets and keeps the mislabeled row", () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-ledger-"));
+  const dir = tempDir("monid-ledger-");
   writeFileSync(
     join(dir, "a-refuse.json"),
     JSON.stringify({
@@ -156,7 +157,7 @@ test("missing ledger dir is no refuse, not a crash", () => {
 });
 
 test("appendLedger rebuilds INDEX and refuse-on-disk is fail-closed", () => {
-  const dir = mkdtempSync(join(tmpdir(), "monid-ledger-"));
+  const dir = tempDir("monid-ledger-");
   const target = { provider: "context.dev", endpoint: "/web/scrape/markdown" };
   assert.equal(hasRefusePacket(dir, target), false);
   assert.throws(() => requireRefuseOnDisk(dir, target), /no refuse packet/);
