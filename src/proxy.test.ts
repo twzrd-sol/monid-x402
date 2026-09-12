@@ -103,6 +103,10 @@ test("startProxy binds loopback; unknown route is 404", async () => {
     assert.equal(response.status, 404);
     const body = (await response.json()) as { code?: number };
     assert.equal(body.code, 404);
+    const desk = await fetch(`http://127.0.0.1:${port}/`);
+    assert.equal(desk.status, 200);
+    const html = await desk.text();
+    assert.match(html, /monid-x402 desk/);
     assert.ok(port > 0);
   } finally {
     await new Promise<void>((resolve, reject) => {
@@ -122,7 +126,9 @@ test("GET /health is 200 and does not fetch", async () => {
     ok: true,
     rail: "monid-x402",
     listen: "8788",
-    prepaid_run: false
+    prepaid_run: false,
+    twzrd_gate: "0.9.5",
+    desk: true
   });
   assert.equal(fetched, false);
 });

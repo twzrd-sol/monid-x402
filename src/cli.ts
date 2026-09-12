@@ -3,7 +3,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { companyBriefPlan } from "./brief.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
-import { decidePayPath } from "./decision.js";
+import { decidePayPath, type WashCoverage } from "./decision.js";
+import { evaluateWashPayTo } from "./twzrd-gate.js";
 import { inspectEndpoint } from "./inspect.js";
 import { appendLedger } from "./ledger.js";
 import { PayGatedError, payRun } from "./pay.js";
@@ -195,11 +196,20 @@ async function brief() {
 async function decision() {
   const target = targetFromArgs();
   const probe = await probeRun402(target);
+  const payTo = probe.paymentRequired.accepts[0]?.payTo;
+  let washCoverage: WashCoverage | undefined;
+  if (payTo) {
+    const wash = await evaluateWashPayTo(payTo);
+    if (wash && "abort" in wash && wash.abort) {
+      washCoverage = wash.reason.includes("twzrd_wash_flagged") ? "flagged" : "unknown";
+    }
+  }
   const verdict = decidePayPath({
     inspectKeyPresent: Boolean(process.env.MONID_API_KEY),
     confirmSpend: flag("--confirm-spend"),
     privateKeyPresent: Boolean(process.env.PRIVATE_KEY?.startsWith("0x")),
     proxyHasWallet: false,
+    washCoverage,
     defaultCap: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy({ maxAmountMicro: 1n })),
     floor: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy())
   });
@@ -251,6 +261,7 @@ async function listen() {
   console.error(`monid-x402 proxy ${base}`);
   console.error(`MONID_API_BASE_URL=${base}`);
   console.error("POST /v1/run → x402 + refuse/spend_gated. Week 0 proxy has no wallet.");
+  console.error("Desk GET /  ·  health names twzrd-x402-gate@0.9.5  ·  pay is CLI only");
 }
 
 async function front() {

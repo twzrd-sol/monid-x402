@@ -7,8 +7,9 @@ This is not a Solana pin. This is not listing TWZRD as a Monid provider.
 
 ## The 1
 
-Every Monid execution that can 402, does 402, and nothing signs until policy
-says so.
+Every Monid execution that can 402, does 402, and nothing signs until local
+policy says so. After local allow, `twzrd-x402-gate@0.9.5` wash-checks
+`payTo` on the paying client (see README). Week-0 listen still does not sign.
 
 Proof, over weeks:
 
@@ -92,4 +93,13 @@ Live after #1 + #2 landed on `main` (verified 2026-09-12):
 
 `31` x402 rows is inventory, not adoption. Leave `8787` alone.
 
-Still later: proxy wallet, SIWX retrieve, Solana, a second partner.
+## Week 3 (wash seat, this tree)
+
+1. Pin `twzrd-x402-gate@0.9.5` on the paying client only.
+2. Tighten: a 200 merchant_card with missing/partial/stale coverage is
+   `twzrd_wash_unknown` (0.9.5 itself treats unknown as allow).
+3. Listen stays no-wallet. `GET /` desk is operate, not a proxy wallet.
+4. `GET /health` names `twzrd_gate: "0.9.5"`.
+
+Still later: proxy wallet, SIWX retrieve, Solana, a second partner,
+full coverage on the live Monid `payTo`.

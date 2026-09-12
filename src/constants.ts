@@ -22,3 +22,6 @@ export const REFUSE_SCHEMA = "twzrd.gate_eval_refuse.v1";
 export const PAID_SCHEMA = "twzrd.gate_eval_paid.v1";
 export const PAY_FAILED_SCHEMA = "twzrd.gate_eval_pay_failed.v1";
 export const RAIL = "monid-x402";
+export const PACKAGE_VERSION = "0.1.0";
+export const TWZRD_GATE_PACKAGE = "twzrd-x402-gate";
+export const TWZRD_GATE_PIN = "0.9.5";

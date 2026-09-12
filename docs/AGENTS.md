@@ -9,7 +9,8 @@ One agent per lane. If you need a file another lane owns, stop.
 ## Listen (week 1-2 door)
 
 Default Path proxy is loopback **8788** only. `GET /health` must be 200 with
-`listen: "8788"` and `prepaid_run: false`. Front is loopback **8790**.
+`listen: "8788"`, `prepaid_run: false`, and `twzrd_gate: "0.9.5"`.
+`GET /` is the operate desk. Front film is loopback **8790**.
 Public week-1-2 film: https://twzrd-sol.github.io/monid-x402/week12.json
 
 ```bash

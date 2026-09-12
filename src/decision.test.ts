@@ -51,3 +51,19 @@ test("floor allow + confirm still cannot pay when week 0 has no wallet", () => {
   assert.equal(decision.nextGate, "proxy_wallet");
   assert.match(decision.blocker, /wallet/i);
 });
+
+test("confirm + key still cannot pay when merchant-card coverage is unknown", () => {
+  const decision = decidePayPath({
+    inspectKeyPresent: false,
+    confirmSpend: true,
+    privateKeyPresent: true,
+    proxyHasWallet: true,
+    washCoverage: "unknown",
+    defaultCap: evaluatePaymentRequired(required, defaultPolicy({ maxAmountMicro: 1n })),
+    floor: evaluatePaymentRequired(required, defaultPolicy({ maxAmountMicro: 10_000n }))
+  });
+  assert.equal(decision.canPay, false);
+  assert.equal(decision.nextGate, "wash_coverage");
+  assert.match(decision.blocker, /twzrd_wash_unknown|unknown/);
+  assert.equal(decision.signer_invocation_count, 0);
+});

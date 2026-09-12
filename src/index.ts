@@ -2,6 +2,7 @@ export * from "./constants.js";
 export * from "./types.js";
 export * from "./payment-required.js";
 export * from "./policy.js";
+export * from "./twzrd-gate.js";
 export * from "./probe.js";
 export * from "./receipt.js";
 export * from "./inspect.js";

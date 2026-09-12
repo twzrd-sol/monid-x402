@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { MONID_API_URL, MONID_X402_RUN_URL } from "./constants.js";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { MONID_API_URL, MONID_X402_RUN_URL, TWZRD_GATE_PIN } from "./constants.js";
 import { ledgerKindFromBody, tryAppendLedger } from "./ledger.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { probeRun402 } from "./probe.js";
@@ -106,7 +109,14 @@ export async function handleProxyRequest(
   if (method === "GET" && urlPath === "/health") {
     return {
       status: 200,
-      body: { ok: true, rail: "monid-x402", listen: "8788", prepaid_run: false }
+      body: {
+        ok: true,
+        rail: "monid-x402",
+        listen: "8788",
+        prepaid_run: false,
+        twzrd_gate: TWZRD_GATE_PIN,
+        desk: true
+      }
     };
   }
 
@@ -166,11 +176,21 @@ export async function handleProxyRequest(
   return { status: 404, body: { code: 404, message: `no route ${method} ${urlPath}` } };
 }
 
+const DESK_HTML = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), "../front/desk.html"),
+  "utf8"
+);
+
 export function startProxy(port = 0): Promise<{ server: Server; port: number }> {
   return new Promise((resolve) => {
     const server = createServer(async (req, res) => {
       try {
         const urlPath = req.url?.split("?")[0] ?? "/";
+        if ((req.method ?? "GET") === "GET" && (urlPath === "/" || urlPath === "/desk")) {
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.end(DESK_HTML);
+          return;
+        }
         const body = req.method === "POST" ? await readJson(req) : {};
         const result = await handleProxyRequest(
           req.method ?? "GET",

@@ -30,11 +30,20 @@ Local JSON only. Does not call `api.monid.ai` or `x402.monid.ai`. Distinguishes
 the Default Path listen (`8788`) from the stale `:8787` film.
 
 ```json
-{ "ok": true, "rail": "monid-x402", "listen": "8788", "prepaid_run": false }
+{
+  "ok": true,
+  "rail": "monid-x402",
+  "listen": "8788",
+  "prepaid_run": false,
+  "twzrd_gate": "0.9.5",
+  "desk": true
+}
 ```
 
 `prepaid_run: false` means this listen will not forward prepaid
 `api.monid.ai/v1/run`. It is not a paid receipt and not a wallet.
+`twzrd_gate` is the wash pin on the *paying* client. Listen still does
+not sign. `GET /` serves the operate desk.
 
 ## Week-0 gaps vs current `proxy.ts`
 

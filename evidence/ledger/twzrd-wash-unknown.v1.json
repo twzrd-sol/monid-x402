@@ -1,0 +1,19 @@
+{
+  "schema": "twzrd.gate_eval_refuse.v1",
+  "rail": "monid-x402",
+  "resource": "https://x402.monid.ai/v1/run",
+  "provider": "context.dev",
+  "endpoint": "/web/scrape/markdown",
+  "selected": {
+    "network": "eip155:8453",
+    "amount": "10000",
+    "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  "decision": "refuse",
+  "reason": "[twzrd] twzrd_wash_unknown payTo=0x9D3d9410Be95fa1d230734B961997427fc61D837",
+  "code": "twzrd_wash_unknown",
+  "signer_invocation_count": 0,
+  "usdc_spent": 0,
+  "capturedAt": "2026-09-12T03:40:00.000Z"
+}
