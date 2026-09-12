@@ -109,6 +109,18 @@
       "capturedAt": "2026-09-12T17:59:16.254Z"
     },
     {
+      "name": "2026-09-12T181123909Z-retrieved.json",
+      "decision": "retrieved",
+      "schema": "twzrd.gate_eval_retrieved.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0,
+      "http_status": 200,
+      "settled": false,
+      "provider": "x402.monid.ai",
+      "endpoint": "/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+      "capturedAt": "2026-09-12T18:11:23.909Z"
+    },
+    {
       "name": "20260912T031545Z-refuse-0001.json",
       "decision": "refuse",
       "schema": "twzrd.gate_eval_refuse.v1",
@@ -165,6 +177,7 @@
     "pay_failed": 0,
     "spend_gated": 2,
     "usdc_spent_sum": 0.04,
-    "signer_invocations_sum": 5
+    "signer_invocations_sum": 6,
+    "retrieved": 1
   }
 }

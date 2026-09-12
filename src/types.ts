@@ -110,6 +110,22 @@ export type PaidReceipt = {
   capturedAt: string;
 };
 
+export type RetrievedReceipt = {
+  schema: "twzrd.gate_eval_retrieved.v1";
+  rail: "monid-x402";
+  resource: string;
+  provider: string;
+  endpoint: string;
+  runId: string;
+  decision: "retrieved";
+  http_status: number;
+  address: string;
+  network: string;
+  signer_invocation_count: 1;
+  usdc_spent: 0;
+  capturedAt: string;
+};
+
 export type PayFailedReceipt = {
   schema: "twzrd.gate_eval_pay_failed.v1";
   rail: "monid-x402";

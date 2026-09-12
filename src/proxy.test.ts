@@ -129,7 +129,8 @@ test("GET /health is 200 and does not fetch", async () => {
     ok: true,
     rail: "monid-x402",
     listen: "8788",
-    prepaid_run: false
+    prepaid_run: false,
+    listen_wallet: false
   });
   assert.equal(fetched, false);
 });
