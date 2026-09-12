@@ -1,0 +1,662 @@
+{
+  "schema": "monid-x402.catalog-matrix.v1",
+  "crawledAt": "2026-09-12T02:20:20.457Z",
+  "count": 40,
+  "x402": 31,
+  "not_found": 6,
+  "other": 3,
+  "rows": [
+    {
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "context.dev",
+      "endpoint": "/web/search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "context.dev",
+      "endpoint": "/brand/retrieve",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "api.strale.io",
+      "endpoint": "/x402/header-security-check",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "59400",
+        "59400"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "api.strale.io",
+      "endpoint": "/x402/v2/cookie-scan",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "178200",
+        "178200"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "api.strale.io",
+      "endpoint": "/x402/google-search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "118800",
+        "118800"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "api.strale.io",
+      "endpoint": "/x402/tech-stack-detect",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "35640",
+        "35640"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "api.strale.io",
+      "endpoint": "/x402/us-company-data",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "59400",
+        "59400"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "api.strale.io",
+      "endpoint": "/x402/uk-company-data",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "59400",
+        "59400"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "api.strale.io",
+      "endpoint": "/x402/company-id-detect",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "59401",
+        "59401"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "tinyfish",
+      "endpoint": "/search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "tinyfish",
+      "endpoint": "/fetch",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "exa",
+      "endpoint": "/search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "exa",
+      "endpoint": "/contents",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "octen",
+      "endpoint": "/search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "octen",
+      "endpoint": "/extract",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "octen",
+      "endpoint": "/broad-search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "octen",
+      "endpoint": "/embedding",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "pdl",
+      "endpoint": "/person/enrich",
+      "status": 404,
+      "class": "not_found",
+      "message": "Endpoint '/person/enrich' not found for provider 'pdl'"
+    },
+    {
+      "provider": "pdl",
+      "endpoint": "/v5/company/enrich",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "100000",
+        "100000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "akta",
+      "endpoint": "/v1/company/search/",
+      "status": 404,
+      "class": "not_found",
+      "message": "Endpoint '/v1/company/search/' not found for provider 'akta'"
+    },
+    {
+      "provider": "akta",
+      "endpoint": "/v1/news/",
+      "status": 404,
+      "class": "not_found",
+      "message": "Endpoint '/v1/news/' not found for provider 'akta'"
+    },
+    {
+      "provider": "akta",
+      "endpoint": "/v1/company/enrichment/",
+      "status": 404,
+      "class": "not_found",
+      "message": "Endpoint '/v1/company/enrichment/' not found for provider 'akta'"
+    },
+    {
+      "provider": "akta",
+      "endpoint": "/v1/product-reviews/",
+      "status": 404,
+      "class": "not_found",
+      "message": "Endpoint '/v1/product-reviews/' not found for provider 'akta'"
+    },
+    {
+      "provider": "apify",
+      "endpoint": "/apidojo/tweet-scraper",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "apify",
+      "endpoint": "/harvestapi/linkedin-post-search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "54000",
+        "54000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "apify",
+      "endpoint": "/damilo/google-maps-scraper",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "13500",
+        "13500"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "apify",
+      "endpoint": "/apidojo/tiktok-scraper",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "apify",
+      "endpoint": "/streamers/youtube-scraper",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "13500",
+        "13500"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "apify",
+      "endpoint": "/web_wanderer/amazon-reviews-extractor",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "apify",
+      "endpoint": "/practicaltools/apify-reddit-api",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "13500",
+        "13500"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "apollo",
+      "endpoint": "/mixed_people/api_search",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "hunter",
+      "endpoint": "/email-verifier",
+      "status": 404,
+      "class": "not_found",
+      "message": "Endpoint '/email-verifier' not found for provider 'hunter'"
+    },
+    {
+      "provider": "tikhub",
+      "endpoint": "/api/v1/tiktok/web/fetch_user_post",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "ahrefs",
+      "endpoint": "/site-explorer/ai-responses-count",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "360000",
+        "360000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "elevenlabs",
+      "endpoint": "/text-to-speech",
+      "status": 400,
+      "class": "other",
+      "message": "Endpoint '/text-to-speech' uses workspace resources and is not available on x402 — use /v1/run"
+    },
+    {
+      "provider": "bytedance",
+      "endpoint": "/v1/video/seedance-2.0",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "756000",
+        "756000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "minimax",
+      "endpoint": "/v1/image_generation",
+      "status": 402,
+      "class": "x402",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "networks": [
+        "eip155:8453",
+        "eip155:143"
+      ],
+      "amounts": [
+        "10000",
+        "10000"
+      ],
+      "assets": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+      ]
+    },
+    {
+      "provider": "saperly",
+      "endpoint": "/place-calls",
+      "status": 400,
+      "class": "other",
+      "message": "Endpoint '/place-calls' uses workspace resources and is not available on x402 — use /v1/run"
+    },
+    {
+      "provider": "sfs",
+      "endpoint": "/put",
+      "status": 400,
+      "class": "other",
+      "message": "Endpoint '/put' uses workspace resources and is not available on x402 — use /v1/run"
+    }
+  ]
+}

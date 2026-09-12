@@ -6,3 +6,6 @@ export * from "./probe.js";
 export * from "./receipt.js";
 export * from "./inspect.js";
 export * from "./pay.js";
+export * from "./classify.js";
+export * from "./catalog.js";
+export * from "./proxy.js";

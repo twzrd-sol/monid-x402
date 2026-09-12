@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { writeFileSync } from "node:fs";
+import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
 import { inspectEndpoint } from "./inspect.js";
 import { PayGatedError, payRun } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
+import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -100,12 +102,46 @@ async function pay() {
   if (result.kind === "refused") process.exitCode = 2;
 }
 
+async function catalog() {
+  const seedPath = arg("--seeds", "evidence/seeds.json")!;
+  const out = arg("--out", "evidence/catalog-matrix.json")!;
+  const rows = await crawlSeeds(loadSeeds(seedPath), { delayMs: 200 });
+  writeMatrix(out, rows);
+  console.log(
+    JSON.stringify(
+      {
+        out,
+        x402: rows.filter((r) => r.class === "x402").length,
+        not_found: rows.filter((r) => r.class === "not_found").length,
+        other: rows.filter((r) => r.class === "other").length,
+        rows
+      },
+      null,
+      2
+    )
+  );
+}
+
+async function listen() {
+  const port = Number(arg("--port", process.env.PORT ?? "8787"));
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
+    throw new Error(`invalid listen port: ${arg("--port", process.env.PORT ?? "8787")}`);
+  }
+  const { port: bound } = await startProxy(port);
+  const base = `http://127.0.0.1:${bound}`;
+  console.error(`monid-x402 proxy ${base}`);
+  console.error(`MONID_API_BASE_URL=${base}`);
+  console.error("Week 0: POST /v1/run → x402 + refuse/spend_gated. No wallet.");
+}
+
 async function main() {
   const command = process.argv[2] ?? "probe";
   if (command === "probe") return probe();
   if (command === "refuse") return refuse();
   if (command === "pay") return pay();
-  console.error("Usage: monid-x402 <probe|refuse|pay> [--provider context.dev] [--endpoint /web/scrape/markdown]");
+  if (command === "catalog") return catalog();
+  if (command === "listen") return listen();
+  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen> [--provider context.dev] [--endpoint /web/scrape/markdown]");
   process.exitCode = 2;
 }
 

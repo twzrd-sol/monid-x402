@@ -29,3 +29,24 @@ export function refuseReceipt(
     capturedAt
   };
 }
+
+export function spendGatedReceipt(
+  target: RunTarget,
+  resourceUrl: string,
+  reason: string,
+  capturedAt = new Date().toISOString()
+): Record<string, unknown> {
+  return {
+    schema: REFUSE_SCHEMA,
+    rail: RAIL,
+    resource: resourceUrl,
+    provider: target.provider,
+    endpoint: target.endpoint,
+    decision: "spend_gated",
+    reason,
+    code: "spend_gated",
+    signer_invocation_count: 0,
+    usdc_spent: 0,
+    capturedAt
+  };
+}

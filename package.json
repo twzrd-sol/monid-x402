@@ -15,7 +15,9 @@
     "build": "tsc",
     "test": "npm run build && node --test dist/*.test.js",
     "probe:live": "npm run build && node dist/cli.js probe",
-    "refuse:live": "npm run build && node dist/cli.js refuse --max-amount-micro 1"
+    "refuse:live": "npm run build && node dist/cli.js refuse --max-amount-micro 1",
+    "catalog:live": "npm run build && node dist/cli.js catalog --seeds evidence/seeds.json --out evidence/catalog-matrix.json",
+    "listen": "npm run build && node dist/cli.js listen --port 8787"
   },
   "keywords": [
     "x402",
