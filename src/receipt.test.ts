@@ -11,6 +11,16 @@ const selected = {
   asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 };
 
+const paidHeader = Buffer.from(
+  JSON.stringify({
+    success: true,
+    payer: "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F",
+    transaction: "0x4a87dcf19dfc90a095ea467f7f2e155427e981183a4086efde4c75767df4517e",
+    network: "eip155:8453"
+  }),
+  "utf8"
+).toString("base64");
+
 test("refuse packet never increments signer or spend", () => {
   const receipt = refuseReceipt(
     target,
@@ -27,17 +37,13 @@ test("refuse packet never increments signer or spend", () => {
 });
 
 test("paid packet records $0.01 and one signer invocation", () => {
-  const receipt = paidReceipt(
-    target,
-    selected,
-    "https://x402.monid.ai/v1/run",
-    200,
-    "eyJzdWNjZXNzIjp0cnVlfQ=="
-  );
+  const receipt = paidReceipt(target, selected, "https://x402.monid.ai/v1/run", 200, paidHeader);
   assert.equal(receipt.schema, "twzrd.gate_eval_paid.v1");
   assert.equal(receipt.signer_invocation_count, 1);
   assert.equal(receipt.usdc_spent, 0.01);
   assert.equal(receipt.decision, "paid");
+  assert.equal(receipt.payer, "0x14df772BD496bBb7f49Bc3E992Ce13B2c441177F");
+  assert.equal(receipt.transaction?.startsWith("0x4a87"), true);
 });
 
 test("paidReceipt rejects 402 and a missing PAYMENT-RESPONSE", () => {
@@ -56,6 +62,7 @@ test("spend_gated uses its own schema, not refuse", () => {
   assert.equal(receipt.schema, "twzrd.gate_eval_spend_gated.v1");
   assert.equal(receipt.decision, "spend_gated");
   assert.equal(receipt.signer_invocation_count, 0);
+  assert.equal(receipt.usdc_spent, 0);
 });
 
 test("HTTP 402 after construct is not a paid packet", () => {

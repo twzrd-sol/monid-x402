@@ -1,7 +1,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { MONID_X402_PAY_TO, NETWORK_BASE, NETWORK_MONAD } from "./constants.js";
-import { listLedgerPacketNames, packetSettled, type LedgerPacket } from "./ledger.js";
+import {
+  listLedgerPacketNames,
+  packetSettled,
+  unwrapLedgerPacket,
+  type LedgerPacket
+} from "./ledger.js";
 import { probeRun402 } from "./probe.js";
 
 export type VerifyCheck = {
@@ -65,7 +70,7 @@ export async function gradeDefaultPath(root: string): Promise<VerifyReport> {
   const packetNames = listLedgerPacketNames(ledgerDir);
   const packets = packetNames.map((name) => ({
     name,
-    rec: JSON.parse(readFileSync(join(ledgerDir, name), "utf8")) as LedgerPacket
+    rec: unwrapLedgerPacket(JSON.parse(readFileSync(join(ledgerDir, name), "utf8")))
   }));
   const extraReads = ["evidence/live-pay-200.json", "evidence/live-brief.json"];
   const paidMis = packets.filter((row) => row.rec.decision === "paid" && !packetSettled(row.rec));

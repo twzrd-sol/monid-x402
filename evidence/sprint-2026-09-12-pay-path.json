@@ -1,0 +1,28 @@
+{
+  "schema": "monid-x402.pay-path.v1",
+  "canPay": false,
+  "signer_invocation_count": 0,
+  "usdc_spent": 0,
+  "inspect": "skipped_no_key",
+  "defaultCap": {
+    "decision": "refuse",
+    "code": "over_cap"
+  },
+  "floor": {
+    "decision": "allow"
+  },
+  "nextGate": "confirm_spend",
+  "blocker": "Policy can allow the $0.01 floor, but pay is gated until --confirm-spend or X-TWZRD-Confirm-Spend.",
+  "nextStep": "Operator sets an explicit local confirm flag. Until then, stop at spend_gated. Do not spend USDC.",
+  "resource": "https://x402.monid.ai/v1/run",
+  "target": {
+    "provider": "context.dev",
+    "endpoint": "/web/scrape/markdown",
+    "input": {}
+  },
+  "selected": {
+    "network": "eip155:8453",
+    "amount": "10000",
+    "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837"
+  }
+}

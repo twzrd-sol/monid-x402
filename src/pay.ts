@@ -14,9 +14,24 @@ export class PayGatedError extends Error {
   }
 }
 
+export function assertPayAuthorized(input: {
+  confirmSpend: boolean;
+  privateKey?: string;
+}): void {
+  if (input.confirmSpend !== true) {
+    throw new PayGatedError(
+      "Pay is gated. Refuse is the default. Re-run with --confirm-spend and PRIVATE_KEY after a refuse receipt exists."
+    );
+  }
+  if (!input.privateKey?.startsWith("0x")) {
+    throw new PayGatedError("PRIVATE_KEY is required for pay. Do not commit it.");
+  }
+}
+
 export type PayOptions = {
   confirmSpend: true;
-  privateKey: `0x${string}`;
+  /** Required only after policy allows. Refuse does not need a wallet. */
+  privateKey?: `0x${string}`;
   policy?: Policy;
   target?: RunTarget;
 };
@@ -55,9 +70,6 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
   if (options.confirmSpend !== true) {
     throw new PayGatedError("Pay requires confirmSpend: true.");
   }
-  if (!options.privateKey?.startsWith("0x")) {
-    throw new PayGatedError("Pay requires a 0x PRIVATE_KEY.");
-  }
   const target = options.target ?? defaultTarget();
   const policy = options.policy ?? defaultPolicy();
   const probe = await probeRun402(target);
@@ -68,10 +80,14 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
       receipt: refuseReceipt(target, verdict, MONID_X402_RUN_URL)
     };
   }
+  const key = options.privateKey;
+  if (!key?.startsWith("0x") || key.length < 66) {
+    throw new PayGatedError("Pay requires a 0x PRIVATE_KEY after policy allow. Do not invent one.");
+  }
 
   const selected: X402Accept = verdict.selected;
   try {
-    const paidFetch = buildPaidFetch(options.privateKey, policy);
+    const paidFetch = buildPaidFetch(key, policy);
     const response = await paidFetch(MONID_X402_RUN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

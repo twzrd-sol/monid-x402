@@ -1,16 +1,34 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { safePagePath } from "./front.js";
+import { test } from "node:test";
+import { resolvePage, safePagePath, startFront } from "./front.js";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "../pages");
+const pages = join(dirname(fileURLToPath(import.meta.url)), "../pages");
 
-test("safePagePath stays inside pages/", () => {
-  const index = safePagePath(root, "/");
-  assert.ok(index?.endsWith("index.html"));
-  const data = safePagePath(root, "/data.json");
-  assert.ok(data?.endsWith("data.json"));
-  assert.equal(safePagePath(root, "/../package.json"), null);
-  assert.equal(safePagePath(root, "/foo/../../package.json"), null);
+test("resolvePage refuses path escape", () => {
+  assert.equal(resolvePage(pages, "/../package.json"), null);
+  assert.equal(safePagePath(pages, "/foo/../../package.json"), null);
+  assert.equal(resolvePage(pages, "/paid.json")?.endsWith("paid.json"), true);
+  assert.equal(resolvePage(pages, "/")?.endsWith("index.html"), true);
+});
+
+test("front serves canonical paid.json and not repo escape", async () => {
+  const { port, close } = await startFront(0, pages);
+  try {
+    const paid = await fetch(`http://127.0.0.1:${port}/paid.json`);
+    assert.equal(paid.status, 200);
+    const body = (await paid.json()) as {
+      usdc_spent?: number;
+      signer_invocation_count?: number;
+      transaction?: string;
+    };
+    assert.equal(body.usdc_spent, 0.01);
+    assert.equal(body.signer_invocation_count, 1);
+    assert.equal(typeof body.transaction, "string");
+    const escape = await fetch(`http://127.0.0.1:${port}/../package.json`);
+    assert.equal(escape.status, 404);
+  } finally {
+    await close();
+  }
 });

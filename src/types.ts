@@ -102,6 +102,9 @@ export type PaidReceipt = {
   decision: "paid";
   http_status: number;
   payment_response: string | null;
+  payer: string | null;
+  transaction: string | null;
+  network: string | null;
   signer_invocation_count: 1;
   usdc_spent: number;
   capturedAt: string;

@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { MONID_API_URL, MONID_X402_RUN_URL } from "./constants.js";
+import { ledgerKindFromBody, tryAppendLedger } from "./ledger.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { probeRun402 } from "./probe.js";
 import { refuseReceipt, spendGatedReceipt } from "./receipt.js";
@@ -11,6 +12,7 @@ export type ProxyHeaders = Record<string, string | string[] | undefined>;
 
 export type ProxyOptions = {
   listenPort?: number;
+  ledgerDir?: string;
 };
 
 function readJson(req: IncomingMessage): Promise<unknown> {
@@ -94,6 +96,19 @@ async function forwardMonid(
   }
 }
 
+function ledgered(
+  status: number,
+  body: unknown,
+  ledgerDir?: string
+): { status: number; body: unknown } {
+  tryAppendLedger(ledgerDir, {
+    kind: ledgerKindFromBody(body),
+    httpStatus: status,
+    receipt: body
+  });
+  return { status, body };
+}
+
 export async function handleProxyRequest(
   method: string,
   urlPath: string,
@@ -143,29 +158,28 @@ export async function handleProxyRequest(
       defaultPolicy({ maxAmountMicro: maxAmountMicro(headers) })
     );
     if (verdict.decision === "refuse") {
-      return {
-        status: 402,
-        body: refuseReceipt(target, verdict, MONID_X402_RUN_URL)
-      };
+      return ledgered(402, refuseReceipt(target, verdict, MONID_X402_RUN_URL), options.ledgerDir);
     }
     if (!confirmSpend(headers)) {
-      return {
-        status: 403,
-        body: spendGatedReceipt(
+      return ledgered(
+        403,
+        spendGatedReceipt(
           target,
           MONID_X402_RUN_URL,
           "policy allow; no X-TWZRD-Confirm-Spend. Listen does not sign."
-        )
-      };
+        ),
+        options.ledgerDir
+      );
     }
-    return {
-      status: 403,
-      body: spendGatedReceipt(
+    return ledgered(
+      403,
+      spendGatedReceipt(
         target,
         MONID_X402_RUN_URL,
         "Listen has no proxy wallet. Confirm is not enough to sign."
-      )
-    };
+      ),
+      options.ledgerDir
+    );
   }
 
   return { status: 404, body: { code: 404, message: `no route ${method} ${urlPath}` } };
@@ -184,7 +198,10 @@ export function startProxy(port = 0): Promise<{ server: Server; port: number }> 
           body,
           req.headers,
           globalThis.fetch,
-          { listenPort: bound.port }
+          {
+            listenPort: bound.port,
+            ledgerDir: process.env.MONID_LEDGER_DIR ?? "evidence/ledger"
+          }
         );
         send(res, result.status, result.body);
       } catch (error) {

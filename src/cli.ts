@@ -3,18 +3,20 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { companyBriefPlan } from "./brief.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
-import { checkMatrix, loadMatrix, writeDriftReport } from "./drift.js";
-import { safePagePath } from "./front.js";
-import { inspectEndpoint } from "./inspect.js";
+import { decidePayPath } from "./decision.js";
 import { doctor } from "./doctor.js";
+import { checkMatrix, loadMatrix, writeDriftReport } from "./drift.js";
+import { pagesRoot, startFront } from "./front.js";
+import { scrapePayInput } from "./input.js";
+import { inspectEndpoint } from "./inspect.js";
 import { appendLedger, rebuildLedgerIndex, requireRefuseOnDisk } from "./ledger.js";
-import { gradeDefaultPath } from "./verify.js";
 import { PayGatedError, payRun } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
+import { gradeDefaultPath } from "./verify.js";
 
 function arg(name: string, fallback?: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -30,7 +32,7 @@ function parseInput(): Record<string, unknown> {
   const raw = arg("--input");
   if (!raw) {
     const url = arg("--url");
-    return url ? { queryParams: { url } } : {};
+    return url ? scrapePayInput(url) : {};
   }
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -199,6 +201,35 @@ async function brief() {
   console.log(JSON.stringify(packet, null, 2));
 }
 
+async function decision() {
+  const target = targetFromArgs();
+  const probe = await probeRun402(target);
+  const verdict = decidePayPath({
+    inspectKeyPresent: Boolean(process.env.MONID_API_KEY),
+    confirmSpend: flag("--confirm-spend"),
+    privateKeyPresent: Boolean(process.env.PRIVATE_KEY?.startsWith("0x")),
+    proxyHasWallet: false,
+    defaultCap: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy({ maxAmountMicro: 1n })),
+    floor: evaluatePaymentRequired(probe.paymentRequired, defaultPolicy())
+  });
+  const out = arg("--out");
+  const body = {
+    ...verdict,
+    resource: probe.paymentRequired.resource.url,
+    target: probe.target,
+    selected: probe.paymentRequired.accepts[0]
+      ? {
+          network: probe.paymentRequired.accepts[0].network,
+          amount: probe.paymentRequired.accepts[0].amount,
+          payTo: probe.paymentRequired.accepts[0].payTo
+        }
+      : null
+  };
+  if (out) writeFileSync(out, `${JSON.stringify(body, null, 2)}\n`);
+  console.log(JSON.stringify(body, null, 2));
+  if (!verdict.canPay) process.exitCode = 2;
+}
+
 async function catalog() {
   const seedPath = arg("--seeds", "evidence/seeds.json")!;
   const out = arg("--out", "evidence/catalog-matrix.json")!;
@@ -237,37 +268,10 @@ async function listen() {
 }
 
 async function front() {
-  const { createServer } = await import("node:http");
-  const { readFile } = await import("node:fs/promises");
-  const { extname, join } = await import("node:path");
   const port = Number(arg("--port", "8790"));
-  const root = join(process.cwd(), "pages");
-  const types: Record<string, string> = {
-    ".html": "text/html; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".css": "text/css; charset=utf-8"
-  };
-  const server = createServer(async (req, res) => {
-    const urlPath = req.url?.split("?")[0] ?? "/";
-    const file = safePagePath(root, urlPath);
-    if (!file) {
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ code: 404, message: `no page ${urlPath}` }));
-      return;
-    }
-    try {
-      const body = await readFile(file);
-      res.writeHead(200, { "Content-Type": types[extname(file)] ?? "application/octet-stream" });
-      res.end(body);
-    } catch {
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ code: 404, message: `no page ${urlPath}` }));
-    }
-  });
-  await new Promise<void>((resolve) => {
-    server.listen(port, "127.0.0.1", () => resolve());
-  });
-  console.error(`monid-x402 front http://127.0.0.1:${port}`);
+  const { port: bound } = await startFront(port, pagesRoot());
+  console.error(`monid-x402 front http://127.0.0.1:${bound}`);
+  console.error("canonical packet: GET /paid.json (not overwritten by refuse)");
 }
 
 function indexLedger() {
@@ -303,6 +307,7 @@ async function main() {
   if (command === "probe") return probe();
   if (command === "refuse") return refuse();
   if (command === "pay") return pay();
+  if (command === "decision") return decision();
   if (command === "catalog") return catalog();
   if (command === "listen") return listen();
   if (command === "front") return front();
@@ -310,7 +315,9 @@ async function main() {
   if (command === "index") return indexLedger();
   if (command === "verify") return verify();
   if (command === "doctor") return doctorCmd();
-  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen|front|brief|index|verify|doctor>");
+  console.error(
+    "Usage: monid-x402 <probe|refuse|catalog|decision|pay|listen|front|brief|index|verify|doctor>"
+  );
   process.exitCode = 2;
 }
 

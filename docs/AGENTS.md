@@ -8,13 +8,20 @@ Solo build is allowed. Keep the write-scope table so two agents do not
 collide. Do not claim an independent VERIFY lane unless a second process
 that did not write `src/` actually graded.
 
-## Listen
+## Listen (week 1-2 door)
 
-Default Path proxy is loopback **8788**. Front is loopback **8790**.
+Default Path proxy is loopback **8788**. `GET /health` reports the bound
+port and `prepaid_run: false`. Front is loopback **8790**.
+Public week-1-2 film: https://twzrd-sol.github.io/monid-x402/week12.json
 
 ```bash
 export MONID_API_BASE_URL=http://127.0.0.1:8788
+npm run decision:listen
 ```
+
+`decision:listen` POSTs `$MONID_API_BASE_URL/v1/run` and exits 0 only on
+402 `over_cap` signer 0. It never sends a wallet or `--confirm-spend`.
+See [`docs/LISTEN-DECISION.md`](LISTEN-DECISION.md).
 
 `127.0.0.1:8787` is a stale `node dist/server.js` (pid 915170, cwd deleted)
 that 302s `/` to the tool-audit GitHub Pages film. Leave it alone. Do not
@@ -32,8 +39,11 @@ Job: local HTTP server. `POST /v1/run` uses the x402 host + policy. Discover/ins
 
 ## LEDGER
 
-Write: `evidence/ledger/`
-Job: append-only refuse/pay JSON. No packet overwrites. `INDEX.json` is derived: rebuild after each append. Count USDC only on settled paid (HTTP 200 + PAYMENT-RESPONSE).
+Write: `evidence/ledger/` (`src/ledger.ts`)
+Job: append-only refuse/pay JSON (`wx`, no overwrites). Proxy `/v1/run` and
+CLI `refuse` / `pay` append. `MONID_LEDGER_DIR` overrides the path.
+`INDEX.json` is derived: rebuild after each append. Count USDC only on
+settled paid (HTTP 200 + PAYMENT-RESPONSE).
 
 ## FLEET
 

@@ -64,6 +64,7 @@ Independent nodes. The maker of a lane does not grade it.
 6. Company brief is the first high-TA buyer loop: brand retrieve + homepage scrape.
 
 Pay stays gated unless `--confirm-spend` and a refuse packet already exist.
+`npm run decision:live` records that hold without constructing a signer.
 
 ## Week 1 (door for other agents)
 
@@ -82,5 +83,13 @@ Pay stays gated unless `--confirm-spend` and a refuse packet already exist.
    `evidence/verify/week2.json` only. Never edit `src/`. Solo grade is
    same-session; do not claim an independent lane that does not exist.
 2. FILM: `tool-audit` already posted. Do not add another public film.
+
+Live after #1 + #2 landed on `main` (verified 2026-09-12):
+
+- door: `export MONID_API_BASE_URL=http://127.0.0.1:8788` (`GET /health` 200, `prepaid_run: false`)
+- film: https://twzrd-sol.github.io/monid-x402/week12.json
+- film HTML: https://twzrd-sol.github.io/monid-x402/week12.html
+
+`31` x402 rows is inventory, not adoption. Leave `8787` alone.
 
 Still later: proxy wallet, SIWX retrieve, Solana, a second partner.
