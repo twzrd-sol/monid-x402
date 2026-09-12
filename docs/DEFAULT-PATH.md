@@ -79,10 +79,10 @@ Pay stays gated unless `--confirm-spend` and a refuse packet already exist.
 
 ## Week 2 (honest grade)
 
-1. VERIFY: independent grader. Re-fetch one live 402. Check refuse + paid
-   packets. Write `evidence/verify/week2.json` only. Never edit `src/`.
-2. FILM: `pages/week12.html` + `pages/week12.json` from verify + ledger.
-   Never `tool-audit/pages/`.
+1. VERIFY: re-fetch one live 402. Check refuse + paid packets. Write
+   `evidence/verify/week2.json` only. Never edit `src/`. Solo grade is
+   same-session; do not claim an independent lane that does not exist.
+2. FILM: `tool-audit` already posted. Do not add another public film.
 
 Live after #1 + #2 landed on `main` (verified 2026-09-12):
 

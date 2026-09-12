@@ -69,6 +69,17 @@ test("payTo pin is case-insensitive; missing network is drift", () => {
   assert.equal(rowDrifted(x402Row({ class: "not_found", payTo: undefined, networks: undefined })), false);
 });
 
+test("a foreign payTo on a later accept is drift", () => {
+  assert.equal(
+    rowDrifted(
+      x402Row({
+        payTos: [PINNED_PAY_TO, "0x0000000000000000000000000000000000000001"]
+      })
+    ),
+    true
+  );
+});
+
 test("catalog-drift.json matches an offline check of the saved matrix", () => {
   const report = checkMatrix(loadMatrix(matrixPath));
   const onDisk = JSON.parse(readFileSync(driftPath, "utf8")) as DriftReport;

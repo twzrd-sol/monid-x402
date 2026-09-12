@@ -126,7 +126,13 @@
         return r.json();
       })
       .then((d) => {
-        document.getElementById("decision").textContent = d.decision || "unknown";
+        document.getElementById("decision").textContent = d.decision || (
+          d.schema === "twzrd.gate_eval_paid.v1" ? "paid" :
+          d.schema === "twzrd.gate_eval_refuse.v1" ? "refuse" :
+          d.schema === "twzrd.gate_eval_pay_failed.v1" ? "pay_failed" :
+          d.schema === "twzrd.gate_eval_spend_gated.v1" ? "spend_gated" :
+          "no_decision"
+        );
         document.getElementById("schema").textContent = d.schema || "";
         document.getElementById("spend").textContent =
           String(d.signer_invocation_count ?? "—") + " / $" + String(d.usdc_spent ?? "—");

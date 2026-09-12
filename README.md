@@ -39,6 +39,9 @@ npm run decision:listen
 npm run catalog:live
 npm run listen
 npm run front
+npm run doctor
+npm run index
+npm run verify
 ```
 
 `refuse:live` hits the live 402, applies `--max-amount-micro 1`, and writes a
@@ -65,9 +68,10 @@ npm run catalog:live
 ```
 
 That POSTs each seed at the x402 host with no payment header and writes
-`evidence/catalog-matrix.json`. Catalog size is not adoption.
+`evidence/catalog-matrix.json` plus `evidence/catalog-drift.json`. Catalog
+size is not adoption.
 
-Week-0 listen (loopback, no wallet):
+Listen (loopback, no wallet):
 
 ```bash
 npm run listen
@@ -75,9 +79,12 @@ npm run listen
 export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
+`GET /health` reports the bound port and `prepaid_run: false`.
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse
 or `spend_gated` packet. It never calls prepaid `api.monid.ai/v1/run`.
-Discover/inspect forward only with the caller's `Authorization`.
+Fleet workers live in `fleet/` and POST only that URL. Discover/inspect
+forward only with the caller's `Authorization`. `--confirm-spend` requires a
+refuse packet already on disk.
 
 ## High-TA loop: company brief
 
