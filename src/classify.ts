@@ -9,6 +9,7 @@ export type CatalogRow = {
   class: "x402" | "not_found" | "other";
   message?: string;
   payTo?: string;
+  payTos?: string[];
   networks?: string[];
   amounts?: string[];
   assets?: string[];
@@ -38,6 +39,7 @@ export async function classifyRun(
       status: 402,
       class: "x402",
       payTo: accepts[0]?.payTo,
+      payTos: accepts.map((a) => a.payTo),
       networks: accepts.map((a) => a.network),
       amounts: accepts.map((a) => a.amount),
       assets: accepts.map((a) => a.asset)

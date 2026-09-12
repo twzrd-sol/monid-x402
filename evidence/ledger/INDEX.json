@@ -6,6 +6,8 @@
       "schema": "twzrd.gate_eval_refuse.v1",
       "signer_invocation_count": 0,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:40:10.355Z"
@@ -16,6 +18,8 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 402,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:40:13.953Z"
@@ -26,6 +30,8 @@
       "schema": "twzrd.gate_eval_pay_failed.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:40:28.679Z"
@@ -36,6 +42,8 @@
       "schema": "twzrd.gate_eval_pay_failed.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:40:59.317Z"
@@ -46,6 +54,8 @@
       "schema": "twzrd.gate_eval_pay_failed.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:41:12.725Z"
@@ -56,6 +66,8 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:41:26.373Z"
@@ -66,6 +78,8 @@
       "schema": "twzrd.gate_eval_refuse.v1",
       "signer_invocation_count": 0,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/brand/retrieve",
       "capturedAt": "2026-09-12T03:44:59.893Z"
@@ -76,6 +90,8 @@
       "schema": "twzrd.gate_eval_refuse.v1",
       "signer_invocation_count": 0,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:45:00.123Z"
@@ -86,6 +102,8 @@
       "schema": "twzrd.gate_eval_pay_failed.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
       "provider": "context.dev",
       "endpoint": "/brand/retrieve",
       "capturedAt": "2026-09-12T03:45:01.096Z"
@@ -96,6 +114,8 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:45:07.262Z"
@@ -106,6 +126,8 @@
       "schema": "twzrd.gate_eval_paid.v1",
       "signer_invocation_count": 1,
       "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
       "provider": "context.dev",
       "endpoint": "/brand/retrieve",
       "capturedAt": "2026-09-12T03:45:17.296Z"
@@ -114,8 +136,11 @@
   "totals": {
     "refuse": 3,
     "paid": 4,
+    "paid_settled": 3,
+    "mislabeled_paid": 1,
     "pay_failed": 4,
-    "usdc_spent_sum": 0.04,
+    "spend_gated": 0,
+    "usdc_spent_sum": 0.03,
     "signer_invocations_sum": 8
   }
 }

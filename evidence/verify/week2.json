@@ -4,8 +4,8 @@
   "rail": "monid-x402",
   "path": "Default Path 1",
   "path_statement": "every execution that can 402 does 402 and nothing signs until policy says so",
-  "gradedAt": "2026-09-12T08:14:59Z",
-  "grader": "independent VERIFY lane; did not write the proxy",
+  "gradedAt": "2026-09-12T08:33:16Z",
+  "grader": "same-session grade; did not claim an independent lane",
   "spent": false,
   "payment_header_sent": false,
   "live_402": {
@@ -17,7 +17,6 @@
       "input": {}
     },
     "http_status": 402,
-    "response_body": {},
     "resource": "https://x402.monid.ai/v1/run",
     "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
     "payTo_pinned": true,
@@ -78,7 +77,7 @@
     {
       "id": "paid_one_sign_positive_spend_200",
       "pass": true,
-      "detail": "3 ledger paid packets have signer_invocation_count 1, usdc_spent > 0, http_status 200; live-pay-200.json matches 034126374Z",
+      "detail": "3 ledger paid packets are settled (HTTP 200, PAYMENT-RESPONSE, usdc_spent > 0)",
       "witnesses": [
         "evidence/ledger/2026-09-12T034126374Z-paid.json",
         "evidence/ledger/2026-09-12T034507262Z-paid.json",
@@ -93,10 +92,10 @@
     }
   ],
   "notes": [
-    "2026-09-12T034013954Z-paid.json is labeled paid with signer_invocation_count 1 and usdc_spent 0.01 but http_status 402; not used as the paid-200 witness",
-    "4 pay_failed packets signed (count 1) then recorded usdc_spent 0 after upstream 402/400; policy-allowed sign, no settlement",
+    "2026-09-12T034013954Z-paid.json is labeled paid but not settled (http_status 402); not in usdc_spent_sum",
+    "4 pay_failed packets signed then recorded usdc_spent 0",
     "8787 pid 915170 left alone",
-    "catalog recrawl 2026-09-12T08:14:22.887Z x402=31 drifted=0 (row count is not adoption)"
+    "tool-audit film not restaged"
   ],
   "verdict": "valid"
 }

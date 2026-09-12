@@ -30,7 +30,7 @@ test("prepaid run URL is not the x402 host", () => {
   assert.throws(() => assertNotPrepaid(PREPAID_RUN_URL), /forbids prepaid/);
 });
 
-test("proxy /v1/run refuses live 402 under default week-0 cap and never names prepaid", async () => {
+test("proxy /v1/run refuses live 402 under default cap and never names prepaid", async () => {
   const result = await handleProxyRequest("POST", "/v1/run", {
     provider: "context.dev",
     endpoint: "/web/scrape/markdown",
@@ -54,7 +54,13 @@ test("allow without confirm is 403 spend_gated, not 409", async () => {
     fixture402Fetch()
   );
   assert.equal(result.status, 403);
-  const body = result.body as { code?: string; decision?: string; signer_invocation_count?: number };
+  const body = result.body as {
+    schema?: string;
+    code?: string;
+    decision?: string;
+    signer_invocation_count?: number;
+  };
+  assert.equal(body.schema, "twzrd.gate_eval_spend_gated.v1");
   assert.equal(body.code, "spend_gated");
   assert.equal(body.decision, "spend_gated");
   assert.equal(body.signer_invocation_count, 0);
@@ -124,6 +130,21 @@ test("GET /health is 200 and does not fetch", async () => {
     prepaid_run: false
   });
   assert.equal(fetched, false);
+});
+
+test("GET /health reports the bound listen port", async () => {
+  const { server, port } = await startProxy(0);
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/health`);
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as { listen?: string; prepaid_run?: boolean };
+    assert.equal(body.listen, String(port));
+    assert.equal(body.prepaid_run, false);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    });
+  }
 });
 
 test("GET /v1/runs is 501 and does not fetch prepaid", async () => {

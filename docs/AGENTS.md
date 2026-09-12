@@ -4,11 +4,13 @@ Work in a `monid-x402` worktree. Do not edit `/home/twzrd/tool-audit`.
 Do not edit wzrd-final serve trees. Do not invent or commit a key.
 Spend only with `--confirm-spend` after a refuse packet is on disk.
 
-One agent per lane. If you need a file another lane owns, stop.
+Solo build is allowed. Keep the write-scope table so two agents do not
+collide. Do not claim an independent VERIFY lane unless a second process
+that did not write `src/` actually graded.
 
-## Listen (week 0, f4d5bdf)
+## Listen
 
-Default Path proxy is loopback **8788** only. Front is loopback **8790**.
+Default Path proxy is loopback **8788**. Front is loopback **8790**.
 
 ```bash
 export MONID_API_BASE_URL=http://127.0.0.1:8788
@@ -20,22 +22,18 @@ point `MONID_API_BASE_URL` at 8787.
 
 ## CATALOG
 
-Write: `evidence/seeds.json`, `evidence/catalog-matrix.json`, `src/classify.ts`, `src/catalog.ts`
-Job: POST each seed at `x402.monid.ai/v1/run` with empty input. Record 402 / 404 / other. Never send a payment header.
+Write: `evidence/seeds.json`, `evidence/catalog-matrix.json`, `src/classify.ts`, `src/catalog.ts`, `src/drift.ts`
+Job: POST each seed at `x402.monid.ai/v1/run` with empty input. Record 402 / 404 / other. Never send a payment header. `catalog` writes matrix and `evidence/catalog-drift.json`. Row count is not adoption.
 
 ## PROXY
 
 Write: `src/proxy.ts`, `src/proxy.test.ts`
-Job: local HTTP server. `POST /v1/run` uses the x402 host + policy. Discover/inspect may forward to `api.monid.ai` with the caller's key.
+Job: local HTTP server. `POST /v1/run` uses the x402 host + policy. Discover/inspect may forward to `api.monid.ai` with the caller's key. `GET /health` reports the bound port. Listen has no wallet.
 
 ## LEDGER
 
 Write: `evidence/ledger/`
-Job: append-only refuse/pay JSON. No overwrites.
-
-## VERIFY
-
-Read only. Re-fetch a 402. Check packet fields. Output valid / not 1.
+Job: append-only refuse/pay JSON. No packet overwrites. `INDEX.json` is derived: rebuild after each append. Count USDC only on settled paid (HTTP 200 + PAYMENT-RESPONSE).
 
 ## FLEET
 
@@ -44,11 +42,16 @@ while the listen is running.
 
 ## VERIFY
 
-Write: `evidence/verify/` only. Re-fetch a 402. Check packet fields.
-Output valid / not 1. Never edit `src/`.
+Write: `evidence/verify/` plus `src/verify.ts`. Re-fetch a 402. Check
+packet fields. Output valid / not 1. `node dist/cli.js verify` rewrites
+`week2.json`. Same-session grade is allowed; do not label it independent.
+
+## DOCTOR
+
+`node dist/cli.js doctor` reads listen `/health`, derived INDEX, and
+catalog drift. No spend. No catalog crawl.
 
 ## FILM
 
-Write: `pages/` in this repo only. Never `tool-audit/pages/`. Week 1-2:
-`pages/week12.html` and `pages/week12.json` only unless you already own
-another pages file.
+`tool-audit` already posted. Do not add another public film. Existing
+`pages/` desk files may be kept honest. Never `tool-audit/pages/`.

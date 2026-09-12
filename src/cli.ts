@@ -3,8 +3,12 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { companyBriefPlan } from "./brief.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
 import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
+import { checkMatrix, loadMatrix, writeDriftReport } from "./drift.js";
+import { safePagePath } from "./front.js";
 import { inspectEndpoint } from "./inspect.js";
-import { appendLedger } from "./ledger.js";
+import { doctor } from "./doctor.js";
+import { appendLedger, rebuildLedgerIndex, requireRefuseOnDisk } from "./ledger.js";
+import { gradeDefaultPath } from "./verify.js";
 import { PayGatedError, payRun } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
@@ -61,6 +65,7 @@ function writePacket(packet: { decision: string }): string {
   const out = arg("--out");
   const path = out ?? appendLedger("evidence/ledger", packet);
   if (out) writeFileSync(path, `${JSON.stringify(packet, null, 2)}\n`);
+  rebuildLedgerIndex("evidence/ledger");
   writeFileSync("pages/data.json", `${JSON.stringify(packet, null, 2)}\n`);
   return path;
 }
@@ -123,12 +128,14 @@ async function pay() {
       "Pay is gated. Refuse is the default. Re-run with --confirm-spend and a key after a refuse receipt exists."
     );
   }
+  const target = targetFromArgs();
+  requireRefuseOnDisk("evidence/ledger", target);
   const maxAmountMicro = BigInt(arg("--max-amount-micro", "10000")!);
   const result = await payRun({
     confirmSpend: true,
     privateKey: loadPrivateKey(),
     policy: defaultPolicy({ maxAmountMicro }),
-    target: targetFromArgs()
+    target
   });
   const out = writePacket(result.receipt);
   console.log(JSON.stringify({ out, ...result }, null, 2));
@@ -156,6 +163,7 @@ async function brief() {
       steps.push({ role: step.role, why: step.why, target: step.target, kind: "refused", receipt });
       continue;
     }
+    requireRefuseOnDisk("evidence/ledger", step.target);
     const result = await payRun({
       confirmSpend: true,
       privateKey: loadPrivateKey(),
@@ -196,11 +204,16 @@ async function catalog() {
   const out = arg("--out", "evidence/catalog-matrix.json")!;
   const rows = await crawlSeeds(loadSeeds(seedPath), { delayMs: 200 });
   writeMatrix(out, rows);
+  const driftOut = arg("--drift", "evidence/catalog-drift.json")!;
+  const drift = checkMatrix(loadMatrix(out));
+  writeDriftReport(driftOut, drift);
   console.log(
     JSON.stringify(
       {
         out,
-        x402: rows.filter((r) => r.class === "x402").length,
+        drift: driftOut,
+        x402: drift.x402,
+        drifted: drift.drifted,
         not_found: rows.filter((r) => r.class === "not_found").length,
         other: rows.filter((r) => r.class === "other").length,
         rows
@@ -220,7 +233,7 @@ async function listen() {
   const base = `http://127.0.0.1:${bound}`;
   console.error(`monid-x402 proxy ${base}`);
   console.error(`MONID_API_BASE_URL=${base}`);
-  console.error("POST /v1/run → x402 + refuse/spend_gated. Week 0 proxy has no wallet.");
+  console.error("POST /v1/run → x402 + refuse/spend_gated. Listen has no wallet.");
 }
 
 async function front() {
@@ -236,10 +249,15 @@ async function front() {
   };
   const server = createServer(async (req, res) => {
     const urlPath = req.url?.split("?")[0] ?? "/";
-    const rel = urlPath === "/" ? "index.html" : urlPath.replace(/^\/+/, "");
+    const file = safePagePath(root, urlPath);
+    if (!file) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ code: 404, message: `no page ${urlPath}` }));
+      return;
+    }
     try {
-      const body = await readFile(join(root, rel));
-      res.writeHead(200, { "Content-Type": types[extname(rel)] ?? "application/octet-stream" });
+      const body = await readFile(file);
+      res.writeHead(200, { "Content-Type": types[extname(file)] ?? "application/octet-stream" });
       res.end(body);
     } catch {
       res.writeHead(404, { "Content-Type": "application/json" });
@@ -252,6 +270,34 @@ async function front() {
   console.error(`monid-x402 front http://127.0.0.1:${port}`);
 }
 
+function indexLedger() {
+  const dir = arg("--dir", "evidence/ledger")!;
+  const report = rebuildLedgerIndex(dir);
+  console.log(JSON.stringify({ dir, totals: report.totals }, null, 2));
+}
+
+async function verify() {
+  const report = await gradeDefaultPath(process.cwd());
+  console.log(
+    JSON.stringify(
+      { verdict: report.verdict, gradedAt: report.gradedAt, checks: report.checks },
+      null,
+      2
+    )
+  );
+  if (report.verdict !== "valid") process.exitCode = 2;
+}
+
+async function doctorCmd() {
+  const report = await doctor({
+    healthUrl: arg("--health"),
+    ledgerDir: arg("--dir", "evidence/ledger"),
+    matrixPath: arg("--matrix", "evidence/catalog-matrix.json")
+  });
+  console.log(JSON.stringify(report, null, 2));
+  if (!report.ok) process.exitCode = 2;
+}
+
 async function main() {
   const command = process.argv[2] ?? "probe";
   if (command === "probe") return probe();
@@ -261,7 +307,10 @@ async function main() {
   if (command === "listen") return listen();
   if (command === "front") return front();
   if (command === "brief") return brief();
-  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen|front|brief>");
+  if (command === "index") return indexLedger();
+  if (command === "verify") return verify();
+  if (command === "doctor") return doctorCmd();
+  console.error("Usage: monid-x402 <probe|refuse|catalog|pay|listen|front|brief|index|verify|doctor>");
   process.exitCode = 2;
 }
 

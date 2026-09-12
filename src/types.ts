@@ -71,6 +71,20 @@ export type RefuseReceipt = {
   capturedAt: string;
 };
 
+export type SpendGatedReceipt = {
+  schema: "twzrd.gate_eval_spend_gated.v1";
+  rail: "monid-x402";
+  resource: string;
+  provider: string;
+  endpoint: string;
+  decision: "spend_gated";
+  reason: string;
+  code: "spend_gated";
+  signer_invocation_count: 0;
+  usdc_spent: 0;
+  capturedAt: string;
+};
+
 export type OfferSlice = {
   network: string;
   amount: string;

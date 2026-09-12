@@ -76,6 +76,11 @@ test("env base is concatenated with /v1/run", () => {
   assert.notEqual(url, PREPAID_RUN_URL);
 });
 
+test("trailing slash on MONID_API_BASE_URL does not double /v1/run", () => {
+  const url = resolveRunUrl({ MONID_API_BASE_URL: "http://127.0.0.1:8788/" });
+  assert.equal(url, "http://127.0.0.1:8788/v1/run");
+});
+
 test("refuse request has default job and no payment header", () => {
   const { url, init } = buildRefuseRequest({});
   assert.equal(url, "http://127.0.0.1:8788/v1/run");

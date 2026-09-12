@@ -13,7 +13,7 @@ export const REFUSE_SCHEMA = "twzrd.gate_eval_refuse.v1";
 const SPEND_FLAGS = ["--confirm-spend", "--key-file", "--wallet"];
 
 export function resolveRunUrl(env = process.env) {
-  const base = env.MONID_API_BASE_URL ?? DEFAULT_BASE_URL;
+  const base = (env.MONID_API_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
   return `${base}/v1/run`;
 }
 

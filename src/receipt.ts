@@ -1,4 +1,10 @@
-import { PAID_SCHEMA, PAY_FAILED_SCHEMA, RAIL, REFUSE_SCHEMA } from "./constants.js";
+import {
+  PAID_SCHEMA,
+  PAY_FAILED_SCHEMA,
+  RAIL,
+  REFUSE_SCHEMA,
+  SPEND_GATED_SCHEMA
+} from "./constants.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
 import type {
   OfferSlice,
@@ -7,8 +13,16 @@ import type {
   PolicyDecision,
   RefuseReceipt,
   RunTarget,
+  SpendGatedReceipt,
   X402Accept
 } from "./types.js";
+
+export class PaidReceiptError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PaidReceiptError";
+  }
+}
 
 function offerSlice(accept: X402Accept): OfferSlice {
   return {
@@ -53,9 +67,9 @@ export function spendGatedReceipt(
   resourceUrl: string,
   reason: string,
   capturedAt = new Date().toISOString()
-): Record<string, unknown> {
+): SpendGatedReceipt {
   return {
-    schema: REFUSE_SCHEMA,
+    schema: SPEND_GATED_SCHEMA,
     rail: RAIL,
     resource: resourceUrl,
     provider: target.provider,
@@ -77,6 +91,12 @@ export function paidReceipt(
   paymentResponse: string | null,
   capturedAt = new Date().toISOString()
 ): PaidReceipt {
+  if (httpStatus < 200 || httpStatus >= 300) {
+    throw new PaidReceiptError(`paidReceipt requires HTTP 2xx, got ${httpStatus}`);
+  }
+  if (!paymentResponse) {
+    throw new PaidReceiptError("paidReceipt requires PAYMENT-RESPONSE");
+  }
   return {
     schema: PAID_SCHEMA,
     rail: RAIL,
