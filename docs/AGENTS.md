@@ -30,8 +30,9 @@ Job: local HTTP server. `POST /v1/run` uses the x402 host + policy. Discover/ins
 
 ## LEDGER
 
-Write: `evidence/ledger/`
-Job: append-only refuse/pay JSON. No overwrites.
+Write: `evidence/ledger/` (`src/ledger.ts`)
+Job: append-only refuse/pay JSON (`wx`, no overwrites). Proxy `/v1/run` and
+CLI `refuse` / `pay` append. `MONID_LEDGER_DIR` overrides the path.
 
 ## VERIFY
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
@@ -134,4 +135,49 @@ test("GET /v1/runs is 501 and does not fetch prepaid", async () => {
   });
   assert.equal(result.status, 501);
   assert.equal(fetched, false);
+});
+
+test("allow + confirm is still 403; week 0 has no proxy wallet", async () => {
+  const result = await handleProxyRequest(
+    "POST",
+    "/v1/run",
+    { provider: "context.dev", endpoint: "/web/scrape/markdown", input: {} },
+    { "X-TWZRD-Max-Amount-Micro": "10000", "X-TWZRD-Confirm-Spend": "true" },
+    fixture402Fetch()
+  );
+  assert.equal(result.status, 403);
+  const body = result.body as { code?: string; reason?: string; signer_invocation_count?: number };
+  assert.equal(body.code, "spend_gated");
+  assert.match(String(body.reason), /no proxy wallet/i);
+  assert.equal(body.signer_invocation_count, 0);
+  assert.ok(!JSON.stringify(result.body).includes(MONID_API_URL));
+});
+
+test("run decisions append ledger files and never overwrite", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "monid-proxy-ledger-"));
+  const first = await handleProxyRequest(
+    "POST",
+    "/v1/run",
+    { provider: "context.dev", endpoint: "/web/scrape/markdown", input: {} },
+    { "X-TWZRD-Max-Amount-Micro": "1" },
+    fixture402Fetch(),
+    { ledgerDir: dir }
+  );
+  const second = await handleProxyRequest(
+    "POST",
+    "/v1/run",
+    { provider: "context.dev", endpoint: "/web/scrape/markdown", input: {} },
+    { "X-TWZRD-Max-Amount-Micro": "10000" },
+    fixture402Fetch(),
+    { ledgerDir: dir }
+  );
+  assert.equal(first.status, 402);
+  assert.equal(second.status, 403);
+  const files = readdirSync(dir).filter((name) => name.endsWith(".json")).sort();
+  assert.equal(files.length, 2);
+  const kinds = files.map((name) => {
+    const row = JSON.parse(readFileSync(join(dir, name), "utf8")) as { kind?: string };
+    return row.kind;
+  });
+  assert.deepEqual(kinds.sort(), ["refuse", "spend_gated"]);
 });

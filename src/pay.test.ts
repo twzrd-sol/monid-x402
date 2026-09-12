@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PayGatedError, payRun } from "./pay.js";
+import { assertPayAuthorized, PayGatedError, payRun } from "./pay.js";
 import { defaultPolicy } from "./policy.js";
 
 test("pay refuses to construct a client without confirmSpend", async () => {
@@ -12,6 +12,18 @@ test("pay refuses to construct a client without confirmSpend", async () => {
         privateKey: "0x01"
       }),
     PayGatedError
+  );
+});
+
+test("assertPayAuthorized requires confirmSpend then a 0x PRIVATE_KEY", () => {
+  assert.throws(() => assertPayAuthorized({ confirmSpend: false }), PayGatedError);
+  assert.throws(() => assertPayAuthorized({ confirmSpend: true }), PayGatedError);
+  assert.throws(
+    () => assertPayAuthorized({ confirmSpend: true, privateKey: "not-a-key" }),
+    PayGatedError
+  );
+  assert.doesNotThrow(() =>
+    assertPayAuthorized({ confirmSpend: true, privateKey: `0x${"11".repeat(32)}` })
   );
 });
 

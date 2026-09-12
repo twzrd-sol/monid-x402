@@ -1,0 +1,9 @@
+{
+  "source": "listen-8788",
+  "capturedAt": "2026-09-12T03:15:45Z",
+  "httpStatus": 401,
+  "body": {
+    "code": 401,
+    "message": "Authorization required"
+  }
+}

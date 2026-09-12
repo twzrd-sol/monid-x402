@@ -20,7 +20,7 @@ docs plus `src/proxy.ts`. `tool-audit` is off limits.
 |---|---|---|
 | `GET /health` | 200 | Week 1 local listen probe; no upstream fetch |
 | `over_cap` / `no_acceptable_offer` / `version_mismatch` / `resource_mismatch` | 402 | Policy refuse |
-| `spend_gated` | 403 | Policy allow, no confirm header |
+| `spend_gated` | 403 | Policy allow, no confirm header, or confirm with no proxy wallet |
 | discover/inspect | upstream | Pass-through |
 | `GET /v1/runs*` | 501 | Week 0; do not forward prepaid |
 
@@ -43,4 +43,8 @@ Closed 2026-09-12: discover/inspect forward, inspect 401, `spend_gated` 403,
 
 Closed week 1: `GET /health` 200 JSON, no fetch.
 
-Still later: ledger, SIWX retrieve, prepaid list, Solana, a proxy wallet.
+Closed 2026-09-12 sprint: append-only ledger on `/v1/run`, confirm-header
+still 403, CLI `decision` (no signer). Listen failures on ledger write do
+not change the HTTP decision.
+
+Still later: SIWX retrieve, prepaid list, Solana, a proxy wallet.
