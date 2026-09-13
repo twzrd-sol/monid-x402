@@ -1,3 +1,4 @@
+import { TWZRD_GATE_PACKAGE, TWZRD_GATE_PIN } from "./constants.js";
 import type { PolicyDecision } from "./types.js";
 
 export const PAY_PATH_SCHEMA = "monid-x402.pay-path.v1" as const;
@@ -92,7 +93,7 @@ export function decidePayPath(input: PayPathInput): PayPathDecision {
       nextGate: "wash_coverage",
       blocker:
         input.washCoverage === "flagged"
-          ? "merchant_card wash_flagged=true. twzrd-x402-gate@0.9.5 aborts before the signer."
+          ? `merchant_card wash_flagged=true. ${TWZRD_GATE_PACKAGE}@${TWZRD_GATE_PIN} aborts before the signer.`
           : "merchant_card coverage is unknown (missing, partial, or stale). This client refuses twzrd_wash_unknown.",
       nextStep:
         "Do not sign. Coverage is wallet-keyed. Packet is twzrd_wash_unknown or twzrd_wash_flagged."

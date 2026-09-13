@@ -11,7 +11,7 @@ that did not write `src/` actually graded.
 ## Listen (week 1-2 door)
 
 Default Path proxy is loopback **8788**. `GET /health` reports the bound
-port, `prepaid_run: false`, and `twzrd_gate: "0.9.5"`. `GET /` is the
+port, `prepaid_run: false`, and `twzrd_gate: "0.9.7"`. `GET /` is the
 operate desk. `GET /prescreen` is the vendor-prescreen SKU. Buyer
 contract: `GET /v1/product` then `POST /v1/product/run`. Confirm on
 listen stays 403. CLI pay is `product --confirm-spend` after a refuse
