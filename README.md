@@ -54,19 +54,20 @@ npm run quote:live
 Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
 `@x402/fetch` + `ExactEvmScheme`. Local policy still runs on the 402
 *before* the signer is constructed, and again first on
-`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.5`
+`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.7`
 runs a wash-only `GET merchant_card/{payTo}` (Base and Monad). This
 client does not select the full preflight engine.
 
 On this pin: `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200
 card with missing, partial, or stale coverage also aborts
-(`twzrd_wash_unknown`) — that tighten is ours; 0.9.5 itself treats
-unknown as allow. Fast lookup failures (503, network, invalid JSON)
-still allow inside the package. `TWZRD_FAIL_OPEN=false` only covers our
-2s outer timeout/throw, not those package-internal allows. Lookups we
-send carry `X-Twzrd-Caller: monid-x402/<version>@0.9.5` and
-`X-TWZRD-Integration: monid-x402/<version>` (the package itself does
-not stamp the wash GET). This rail is EVM and does not register Solana.
+(`twzrd_wash_unknown`) — 0.9.7 refuses that on a returned card; this
+client still refuses after a package allow. Fast lookup failures (503,
+network, invalid JSON) still allow inside the package.
+`TWZRD_FAIL_OPEN=false` only covers our 2s outer timeout/throw, not
+those package-internal allows. Lookups we send carry
+`X-Twzrd-Caller: monid-x402/<version>@0.9.7` and
+`X-TWZRD-Integration: monid-x402/<version>`. This rail is EVM and does
+not register Solana.
 
 Wash refuse happens after local allow and **before** the signer is
 constructed. Packet: `evidence/ledger/twzrd-wash-unknown.v1.json`.
@@ -104,7 +105,7 @@ export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
 `GET /health` reports the bound port, `prepaid_run: false`, and
-`twzrd_gate: "0.9.5"`. `GET /` is the operate desk. Confirm on listen
+`twzrd_gate: "0.9.7"`. `GET /` is the operate desk. Confirm on listen
 is still 403 — no proxy wallet. Pay is CLI `pay --confirm-spend` only.
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse
 or `spend_gated` packet. It never calls prepaid `api.monid.ai/v1/run`.

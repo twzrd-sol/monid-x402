@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { tempDir } from "./helpers/tmpdir.js";
-import { MONID_API_URL, MONID_X402_RUN_URL } from "./constants.js";
+import { MONID_API_URL, MONID_X402_RUN_URL, TWZRD_GATE_PIN } from "./constants.js";
 import { handleProxyRequest, PREPAID_RUN_URL, assertNotPrepaid, startProxy } from "./proxy.js";
 
 const fixture = JSON.parse(
@@ -138,7 +138,7 @@ test("GET /health is 200 and does not fetch", async () => {
     rail: "monid-x402",
     listen: "8788",
     prepaid_run: false,
-    twzrd_gate: "0.9.5",
+    twzrd_gate: TWZRD_GATE_PIN,
     desk: true,
     sku: "vendor-prescreen",
     listen_wallet: false

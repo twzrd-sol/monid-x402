@@ -39,7 +39,7 @@ test("wrapper fail-open defaults true; TWZRD_FAIL_OPEN=false refuses hangs", () 
   assert.equal(twzrdGateTimeoutMs({ TWZRD_GATE_TIMEOUT_MS: "nope" }), TWZRD_GATE_TIMEOUT_MS);
 });
 
-test("attribution is monid-x402/<version> and caller appends @0.9.5", () => {
+test("attribution is monid-x402/<version> and caller appends the gate pin", () => {
   const attr = twzrdGateAttribution({}, () => "run-1");
   assert.equal(attr.integration, `monid-x402/${PACKAGE_VERSION}`);
   assert.equal(attr.runId, "run-1");
