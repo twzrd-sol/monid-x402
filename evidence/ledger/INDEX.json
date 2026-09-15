@@ -14,11 +14,11 @@
     },
     {
       "name": "2026-09-12T034013954Z-paid.json",
-      "decision": "paid",
-      "schema": "twzrd.gate_eval_paid.v1",
+      "decision": "pay_failed",
+      "schema": "twzrd.gate_eval_pay_failed.v1",
       "signer_invocation_count": 1,
-      "usdc_spent": 0.01,
-      "http_status": 402,
+      "usdc_spent": 0,
+      "http_status": null,
       "settled": false,
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
@@ -121,6 +121,30 @@
       "capturedAt": "2026-09-12T18:11:23.909Z"
     },
     {
+      "name": "2026-09-15T193710311Z-refuse.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-15T19:37:10.311Z"
+    },
+    {
+      "name": "2026-09-15T194040680Z-paid.json",
+      "decision": "paid",
+      "schema": "twzrd.gate_eval_paid.v1",
+      "signer_invocation_count": 1,
+      "usdc_spent": 0.01,
+      "http_status": 200,
+      "settled": true,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-15T19:40:40.680Z"
+    },
+    {
       "name": "20260912T031545Z-refuse-0001.json",
       "decision": "refuse",
       "schema": "twzrd.gate_eval_refuse.v1",
@@ -167,17 +191,41 @@
       "provider": "context.dev",
       "endpoint": "/web/scrape/markdown",
       "capturedAt": "2026-09-12T03:15:45.014Z"
+    },
+    {
+      "name": "pay-funding-gap.v1.json",
+      "decision": null,
+      "schema": "twzrd.pay_attempt.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
+      "provider": null,
+      "endpoint": null,
+      "capturedAt": "2026-09-12T03:47:00Z"
+    },
+    {
+      "name": "twzrd-wash-unknown.v1.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-12T03:40:00.000Z"
     }
   ],
   "totals": {
-    "refuse": 6,
+    "refuse": 8,
     "paid": 5,
-    "paid_settled": 4,
-    "mislabeled_paid": 1,
-    "pay_failed": 0,
+    "paid_settled": 5,
+    "mislabeled_paid": 0,
+    "pay_failed": 1,
     "spend_gated": 2,
-    "usdc_spent_sum": 0.04,
-    "signer_invocations_sum": 6,
-    "retrieved": 1
+    "retrieved": 1,
+    "usdc_spent_sum": 0.05,
+    "signer_invocations_sum": 7
   }
 }

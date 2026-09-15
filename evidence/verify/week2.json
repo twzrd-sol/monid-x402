@@ -4,7 +4,7 @@
   "rail": "monid-x402",
   "path": "Default Path 1",
   "path_statement": "every execution that can 402 does 402 and nothing signs until policy says so",
-  "gradedAt": "2026-09-12T17:59:20Z",
+  "gradedAt": "2026-09-15T22:12:31Z",
   "grader": "same-session grade; did not claim an independent lane",
   "spent": false,
   "payment_header_sent": false,
@@ -53,10 +53,15 @@
     "evidence/ledger/2026-09-12T034517296Z-paid.json",
     "evidence/ledger/2026-09-12T175422827Z-paid.json",
     "evidence/ledger/2026-09-12T175916254Z-refuse.json",
+    "evidence/ledger/2026-09-12T181123909Z-retrieved.json",
+    "evidence/ledger/2026-09-15T193710311Z-refuse.json",
+    "evidence/ledger/2026-09-15T194040680Z-paid.json",
     "evidence/ledger/20260912T031545Z-refuse-0001.json",
     "evidence/ledger/20260912T031800Z-listen-confirm-still-gated-0001.json",
     "evidence/ledger/20260912T031800Z-listen-over_cap-0001.json",
     "evidence/ledger/20260912T031800Z-listen-spend_gated-0001.json",
+    "evidence/ledger/pay-funding-gap.v1.json",
+    "evidence/ledger/twzrd-wash-unknown.v1.json",
     "evidence/live-pay-200.json",
     "evidence/live-brief.json"
   ],
@@ -69,27 +74,36 @@
     {
       "id": "refuse_zero_sign_zero_spend",
       "pass": true,
-      "detail": "6 ledger refuse packets have signer_invocation_count 0 and usdc_spent 0",
+      "detail": "8 ledger refuse packets have signer_invocation_count 0 and usdc_spent 0",
       "witnesses": [
         "evidence/ledger/2026-09-12T034010355Z-refuse.json",
         "evidence/ledger/2026-09-12T034459893Z-refuse.json",
         "evidence/ledger/2026-09-12T034500123Z-refuse.json",
         "evidence/ledger/2026-09-12T175916254Z-refuse.json",
+        "evidence/ledger/2026-09-15T193710311Z-refuse.json",
         "evidence/ledger/20260912T031545Z-refuse-0001.json",
-        "evidence/ledger/20260912T031800Z-listen-over_cap-0001.json"
+        "evidence/ledger/20260912T031800Z-listen-over_cap-0001.json",
+        "evidence/ledger/twzrd-wash-unknown.v1.json"
       ]
     },
     {
       "id": "paid_one_sign_positive_spend_200",
       "pass": true,
-      "detail": "4 ledger paid packets are settled (HTTP 200, PAYMENT-RESPONSE, usdc_spent > 0)",
+      "detail": "5 ledger paid packets are settled (HTTP 200, PAYMENT-RESPONSE, usdc_spent > 0)",
       "witnesses": [
         "evidence/ledger/2026-09-12T034126374Z-paid.json",
         "evidence/ledger/2026-09-12T034507262Z-paid.json",
         "evidence/ledger/2026-09-12T034517296Z-paid.json",
         "evidence/ledger/2026-09-12T175422827Z-paid.json",
+        "evidence/ledger/2026-09-15T194040680Z-paid.json",
         "evidence/live-pay-200.json"
       ]
+    },
+    {
+      "id": "no_unsettled_packet_claims_spend",
+      "pass": true,
+      "detail": "5 packets are labeled paid, 5 settled, 0 unsettled; 0 of those claim usdc_spent > 0",
+      "witnesses": []
     },
     {
       "id": "no_prepaid_api_monid_resource",
@@ -98,8 +112,7 @@
     }
   ],
   "notes": [
-    "2026-09-12T034013954Z-paid.json is labeled paid but not settled (http_status 402); not in usdc_spent_sum",
-    "0 pay_failed packets signed then recorded usdc_spent 0",
+    "1 pay_failed packets signed then recorded usdc_spent 0",
     "8787 left alone",
     "tool-audit film not restaged"
   ],

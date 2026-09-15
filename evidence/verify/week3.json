@@ -4,7 +4,7 @@
   "rail": "monid-x402",
   "path": "Default Path 1",
   "path_statement": "every execution that can 402 does 402 and nothing signs until policy says so",
-  "gradedAt": "2026-09-12T17:59:21Z",
+  "gradedAt": "2026-09-15T22:12:32Z",
   "grader": "same-session grade; did not claim an independent lane",
   "spent": false,
   "payment_header_sent": false,
