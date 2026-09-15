@@ -1,6 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { TWZRD_GATE_PIN } from "./constants.js";
 import { assertNotStaleFilm, defaultListenBase } from "./listen-decision.js";
+import { PRODUCT_CATALOG_SCHEMA, PRODUCT_SKU } from "./product.js";
 import { assertRunId } from "./retrieve.js";
 
 export const LISTEN_E2E_SCHEMA = "monid-x402.listen-e2e.v1" as const;
@@ -28,6 +30,8 @@ export type ListenE2EProof = {
     confirm_still_gated: ListenE2EStep;
     retrieve: ListenE2EStep;
     list: ListenE2EStep;
+    product_catalog: ListenE2EStep;
+    product_confirm: ListenE2EStep;
   };
 };
 
@@ -83,6 +87,11 @@ export async function proveListenE2E(options: {
   if (health.status !== 200 || health.body.ok !== true || health.body.prepaid_run !== false) {
     throw new Error(`e2e health failed HTTP ${health.status}`);
   }
+  if (health.body.twzrd_gate !== TWZRD_GATE_PIN || health.body.sku !== PRODUCT_SKU) {
+    throw new Error(
+      `e2e health expected twzrd_gate=${TWZRD_GATE_PIN} sku=${PRODUCT_SKU}, got twzrd_gate=${String(health.body.twzrd_gate)} sku=${String(health.body.sku)}`
+    );
+  }
 
   const runRefuse = await readJson(fetchImpl, `${listen}/v1/run`, {
     method: "POST",
@@ -131,6 +140,34 @@ export async function proveListenE2E(options: {
     throw new Error(`e2e list expected 501, got ${list.status}`);
   }
 
+  const catalog = await readJson(fetchImpl, `${listen}/v1/product`);
+  const skus = Array.isArray(catalog.body.skus) ? catalog.body.skus : [];
+  const hasSku = skus.some(
+    (row) => row && typeof row === "object" && (row as { sku?: unknown }).sku === PRODUCT_SKU
+  );
+  if (
+    catalog.status !== 200 ||
+    catalog.body.schema !== PRODUCT_CATALOG_SCHEMA ||
+    catalog.body.canPay !== false ||
+    !hasSku
+  ) {
+    throw new Error(
+      `e2e product catalog expected 200 ${PRODUCT_CATALOG_SCHEMA} sku=${PRODUCT_SKU} canPay=false, got HTTP ${catalog.status}`
+    );
+  }
+
+  const productConfirm = await readJson(fetchImpl, `${listen}/v1/product/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: "https://monid.ai" })
+  });
+  if (productConfirm.status !== 403 || productConfirm.body.code !== "spend_gated") {
+    throw new Error(
+      `e2e product confirm expected 403 spend_gated, got ${productConfirm.status} ${String(productConfirm.body.code)}`
+    );
+  }
+  requireZero("product_confirm", productConfirm.body);
+
   return {
     schema: LISTEN_E2E_SCHEMA,
     listen,
@@ -144,15 +181,30 @@ export async function proveListenE2E(options: {
       spend_gated: step(spendGated.status, spendGated.body),
       confirm_still_gated: step(confirm.status, confirm.body),
       retrieve: step(retrieve.status, retrieve.body),
-      list: step(list.status, list.body)
+      list: step(list.status, list.body),
+      product_catalog: step(catalog.status, catalog.body),
+      product_confirm: step(productConfirm.status, productConfirm.body)
     }
   };
 }
 
 export function writeWeek4(root: string, proof: ListenE2EProof): string {
+  return writeWeekReport(root, "evidence/verify/week4.json", "twzrd.default_path_verify.week4.v1", proof);
+}
+
+export function writeWeek6(root: string, proof: ListenE2EProof): string {
+  return writeWeekReport(root, "evidence/verify/week6.json", "twzrd.default_path_verify.week6.v1", proof);
+}
+
+function writeWeekReport(
+  root: string,
+  relative: string,
+  schema: string,
+  proof: ListenE2EProof
+): string {
   const gradedAt = new Date().toISOString().replace(/\.\d+Z$/, "Z");
   const report = {
-    schema: "twzrd.default_path_verify.week4.v1",
+    schema,
     lane: "VERIFY",
     rail: "monid-x402",
     path: "Default Path 1",
@@ -164,7 +216,7 @@ export function writeWeek4(root: string, proof: ListenE2EProof): string {
     proof,
     verdict: proof.ok ? "valid" : "invalid"
   };
-  const out = join(root, "evidence/verify/week4.json");
+  const out = join(root, relative);
   writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
   return out;
 }

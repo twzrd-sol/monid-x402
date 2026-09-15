@@ -154,3 +154,7 @@ confirm-still-gated → SIWX retrieve refuse → list 501 on 8788. Signer 0.
 
 Week 5: `retrieve --confirm-sign --key-file` signs SIWX and reads the run.
 That is identity, not a new USDC debit. Do not commit the key.
+
+Week 6: the same e2e walk also requires `twzrd_gate` + `sku` on `/health`,
+`GET /v1/product` 200, and `POST /v1/product/confirm` 403. A week-5 listen
+that 404s the catalog is a stale door.

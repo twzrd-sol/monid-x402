@@ -18,7 +18,7 @@ import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { defaultTarget, probeRun402 } from "./probe.js";
 import { startProxy } from "./proxy.js";
 import { refuseReceipt } from "./receipt.js";
-import { DEFAULT_E2E_RUN_ID, proveListenE2E, writeWeek4 } from "./e2e.js";
+import { DEFAULT_E2E_RUN_ID, proveListenE2E, writeWeek6 } from "./e2e.js";
 import { probeRetrieve402, retrieveRefuse, retrieveSigned } from "./retrieve.js";
 import { gradeDefaultPath, gradeWeek3 } from "./verify.js";
 
@@ -339,7 +339,7 @@ async function e2e() {
     baseUrl: arg("--base", process.env.MONID_API_BASE_URL ?? "http://127.0.0.1:8788"),
     runId: arg("--run-id") ?? DEFAULT_E2E_RUN_ID
   });
-  const out = writeWeek4(process.cwd(), proof);
+  const out = writeWeek6(process.cwd(), proof);
   writeFileSync("evidence/live-e2e.json", `${JSON.stringify(proof, null, 2)}\n`);
   console.log(JSON.stringify({ out, proof }, null, 2));
 }

@@ -11,7 +11,7 @@ function json(status: number, body: unknown): Response {
   });
 }
 
-test("proveListenE2E walks health, refuse, spend_gated, SIWX retrieve, and list 501", async () => {
+test("proveListenE2E walks health, refuse, spend_gated, SIWX retrieve, list 501, and SKU catalog", async () => {
   const seen: { method: string; url: string }[] = [];
   const proof = await proveListenE2E({
     baseUrl: "http://127.0.0.1:8788",
@@ -21,7 +21,14 @@ test("proveListenE2E walks health, refuse, spend_gated, SIWX retrieve, and list 
       const method = (init?.method ?? "GET").toUpperCase();
       seen.push({ method, url });
       if (url.endsWith("/health")) {
-        return json(200, { ok: true, rail: "monid-x402", listen: "8788", prepaid_run: false });
+        return json(200, {
+          ok: true,
+          rail: "monid-x402",
+          listen: "8788",
+          prepaid_run: false,
+          twzrd_gate: "0.9.5",
+          sku: "vendor-prescreen"
+        });
       }
       if (method === "POST" && url.endsWith("/v1/run")) {
         const headers = new Headers(init?.headers);
@@ -64,6 +71,23 @@ test("proveListenE2E walks health, refuse, spend_gated, SIWX retrieve, and list 
       if (method === "GET" && url.endsWith("/v1/runs")) {
         return json(501, { code: 501, message: "do not forward prepaid run list" });
       }
+      if (method === "GET" && url.endsWith("/v1/product")) {
+        return json(200, {
+          schema: "twzrd.product_catalog.v1",
+          skus: [{ sku: "vendor-prescreen" }],
+          canPay: false,
+          nextGate: "confirm_spend"
+        });
+      }
+      if (method === "POST" && url.endsWith("/v1/product/confirm")) {
+        return json(403, {
+          schema: "twzrd.gate_eval_spend_gated.v1",
+          decision: "spend_gated",
+          code: "spend_gated",
+          signer_invocation_count: 0,
+          usdc_spent: 0
+        });
+      }
       return json(500, { message: `unexpected ${method} ${url}` });
     }
   });
@@ -75,10 +99,25 @@ test("proveListenE2E walks health, refuse, spend_gated, SIWX retrieve, and list 
   assert.equal(proof.steps.confirm_still_gated.code, "spend_gated");
   assert.equal(proof.steps.retrieve.code, "siwx_no_pay_offer");
   assert.equal(proof.steps.list.status, 501);
+  assert.equal(proof.steps.product_catalog.status, 200);
+  assert.equal(proof.steps.product_confirm.code, "spend_gated");
   assert.equal(proof.signer_invocation_count, 0);
   assert.equal(proof.usdc_spent, 0);
   assert.ok(!seen.some((row) => row.url.includes("8787")));
   assert.ok(!seen.some((row) => row.url.includes("api.monid.ai")));
+});
+
+test("proveListenE2E fails when health omits the SKU pin", async () => {
+  await assert.rejects(
+    () =>
+      proveListenE2E({
+        baseUrl: "http://127.0.0.1:8788",
+        runId: RUN_ID,
+        fetchImpl: async () =>
+          json(200, { ok: true, rail: "monid-x402", listen: "8788", prepaid_run: false })
+      }),
+    /twzrd_gate|sku/
+  );
 });
 
 test("proveListenE2E refuses the stale 8787 film", async () => {

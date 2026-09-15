@@ -152,5 +152,22 @@ node dist/cli.js retrieve --confirm-sign --run-id <ULID> --key-file <evm.json>
 unless `MONID_LISTEN_PRIVATE_KEY` is set and the caller sends
 `X-TWZRD-Confirm-Sign`. Fleet/e2e/doctor still prove the unsigned door.
 
+## Week 6 (SKU on the listen door)
+
+The SKU shipped on main. The live 8788 process can still be a week-5
+binary that 404s `GET /v1/product` and omits `twzrd_gate` on `/health`.
+That is a stale door, not a missing product.
+
+1. `GET /health` names `twzrd_gate: "0.9.5"` and `sku: "vendor-prescreen"`.
+2. `GET /v1/product` lists the catalog. `canPay` stays false.
+3. `POST /v1/product/confirm` stays 403 `spend_gated`. Signer 0. No quote
+   probe in e2e (quote would hit live x402).
+4. `proveListenE2E` / `npm run e2e:listen` walks those SKU steps and writes
+   `evidence/verify/week6.json`. Do not rewrite week4.json.
+5. `doctor` fails if health omits the pin or the catalog 404s.
+
+Bounce 8788 onto current main before claiming the door serves the SKU.
+Leave 8787 alone. No proxy wallet. No extra spend.
+
 Still later: default listen wallet, Solana, a second partner, full
 coverage on the live Monid `payTo`, a TWZRD take-rate.

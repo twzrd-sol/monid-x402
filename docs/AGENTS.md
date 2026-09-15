@@ -11,12 +11,12 @@ that did not write `src/` actually graded.
 ## Listen (week 1-2 door)
 
 Default Path proxy is loopback **8788**. `GET /health` reports the bound
-port, `prepaid_run: false`, and `twzrd_gate: "0.9.5"`. `GET /` is the
-operate desk. `GET /prescreen` is the vendor-prescreen SKU. Buyer
-contract: `GET /v1/product` then `POST /v1/product/run`. Confirm on
-listen stays 403. CLI pay is `product --confirm-spend` after a refuse
-packet for the seat being paid. Do not invent a key. Front film is
-loopback **8790**.
+port, `prepaid_run: false`, `twzrd_gate: "0.9.5"`, and
+`sku: "vendor-prescreen"`. `GET /` is the operate desk. `GET /prescreen`
+is the vendor-prescreen SKU. Buyer contract: `GET /v1/product` then
+`POST /v1/product/run`. Confirm on listen stays 403. CLI pay is
+`product --confirm-spend` after a refuse packet for the seat being paid.
+Do not invent a key. Front film is loopback **8790**.
 Public week-1-2 film: https://twzrd-sol.github.io/monid-x402/week12.json
 
 ```bash
@@ -55,11 +55,13 @@ settled paid (HTTP 200 + PAYMENT-RESPONSE).
 Write: `fleet/` only. Isolated workers. No shared key. Do not edit PROXY
 while the listen is running.
 
-## E2E (week 4)
+## E2E (week 4 + week 6 SKU)
 
 Write: `src/e2e.ts`. Job: one walk of the 8788 door. `npm run e2e:listen`
-writes `evidence/verify/week4.json`. Doctor and fleet must cover retrieve,
-not only POST /v1/run. No spend. Leave 8787 alone.
+writes `evidence/verify/week6.json` (health gate pin, `/v1/run` hold,
+SIWX retrieve, list 501, `GET /v1/product`, `POST /v1/product/confirm`
+403). Do not rewrite `week4.json`. Doctor fails if `/v1/product` 404s.
+No spend. Leave 8787 alone.
 
 ## RETRIEVE (week 3)
 
@@ -78,8 +80,9 @@ packet fields. Output valid / not 1. `node dist/cli.js verify` rewrites
 
 ## DOCTOR
 
-`node dist/cli.js doctor` reads listen `/health`, derived INDEX, and
-catalog drift. No spend. No catalog crawl.
+`node dist/cli.js doctor` reads listen `/health` (including `twzrd_gate`
+and `sku`), `GET /v1/product`, derived INDEX, and catalog drift. No
+spend. No catalog crawl.
 
 ## FILM
 
