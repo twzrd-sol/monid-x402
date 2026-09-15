@@ -2,7 +2,7 @@
  * Seller-side SKU: counterparty provenance.
  *
  * Nothing in Monid's catalog answers "who actually answers this call". A
- * sweep of 433 endpoints found 58 selling text extraction from $0.00009 and
+ * sweep of 412 endpoints found 67 selling text extraction from $0.00009 and
  * none selling provenance. The nearest neighbours are WHOIS, which reports who
  * registered a domain, and institutional-ownership feeds, which are about
  * equities. Neither tells a buying agent that the brand on a listing is not
@@ -259,13 +259,22 @@ export function counterpartySkuCard() {
     sku: COUNTERPARTY_SKU,
     rail: RAIL,
     job: "Resolve who actually answers a paid call before an agent pays it.",
+    // Figures from tool-audit evidence/market-scan.json, a discovery-only
+    // sweep that settles nothing. Reproduce with `node scripts/market-scan.mjs`.
     marketCheck: {
-      endpointsSwept: 433,
-      sellingTextExtraction: 58,
+      source: "tool-audit evidence/market-scan.json",
+      endpointsSwept: 412,
+      providersSwept: 63,
+      sellingTextExtraction: 67,
+      textExtractionProviders: 11,
       textExtractionFloorUsd: 0.00009,
       sellingCounterpartyProvenance: 0,
-      nearestNeighbours: ["WHOIS (who registered a domain)", "institutional ownership (equities)"],
-      sweptAt: "2026-09-15"
+      counterpartyKeywordMatches: 1,
+      counterpartyExcludedOnReview: "weather-underground:/get_historical_airport — historical airport weather, not endpoint provenance",
+      adjacentWhoisSellers: 5,
+      adjacentNote: "WHOIS reports who registered a domain. It does not report that a listing's asserted brand is not the party that answers.",
+      sweptAt: "2026-09-15",
+      coverage: "endpoints surfaced by 25 seed queries; a floor on how many sellers exist, not a census"
     },
     tiers: Object.values(TIERS),
     pricingModel:
