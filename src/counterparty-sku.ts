@@ -107,7 +107,7 @@ export const COUNTERPARTY_INPUT_SCHEMA = {
     subject: {
       description: "What to resolve. A Monid tool id, a resource URL, or a list for cohort.",
       oneOf: [
-        { type: "string", pattern: "^[a-z0-9.\\-]+:/.+$", description: "Monid tool id, e.g. nasdaq:/get_stock_quote" },
+        { type: "string", pattern: "^[a-z0-9][a-z0-9.\\-]*:/[^/].*$", description: "Monid tool id, e.g. nasdaq:/get_stock_quote. The single slash after the colon is what separates this from a URL." },
         { type: "string", format: "uri", pattern: "^https://", description: "Resource URL" },
         {
           type: "array",
@@ -258,7 +258,7 @@ export function counterpartySkuCard() {
     schema: COUNTERPARTY_SKU_SCHEMA,
     sku: COUNTERPARTY_SKU,
     rail: RAIL,
-    job: "Resolve who actually answers a paid call before an agent pays it.",
+    job: "Resolve which host a listing documents itself at, before an agent pays it.",
     // Figures from tool-audit evidence/market-scan.json, a discovery-only
     // sweep that settles nothing. Reproduce with `node scripts/market-scan.mjs`.
     marketCheck: {

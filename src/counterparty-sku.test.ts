@@ -41,9 +41,12 @@ test("cohort COGS tracks hosts screened, so margin scales with the dedup", () =>
   const q = quoteCounterparty({ tier: "cohort", subjectsSubmitted: 59, distinctCounterparties: 31 });
   assert.equal(q.cogsUsd, 1.8414);
   assert.equal(q.marginUsd, 0.6386);
-  // The buyer saves more than the seller gives up, because 28 duplicate
-  // screens are not performed at all rather than discounted.
-  assert.ok(q.buyerSavesUsd > q.marginUsd);
+  // marginUsd is what the seller KEEPS, not what it gives up. The margin
+  // forgone is the 28 duplicate screens never performed: 28 x (0.08 - 0.0594)
+  // = $0.5768. The buyer saves $2.24, which is more, because those screens are
+  // not discounted, they are not performed at all.
+  assert.equal(Number((28 * (0.08 - 0.0594)).toFixed(4)), 0.5768);
+  assert.ok(q.buyerSavesUsd > 0.5768);
 });
 
 test("non-cohort tiers bill every subject", () => {
@@ -93,4 +96,16 @@ test("the published schemas constrain what an agent may send and expect", () => 
   const cls = COUNTERPARTY_OUTPUT_SCHEMA.properties.results.items.properties.classification;
   assert.ok(cls.enum.includes("undocumented"));
   assert.ok(COUNTERPARTY_OUTPUT_SCHEMA.required.includes("limitation"));
+});
+
+test("a URL subject matches exactly one branch of the input schema", () => {
+  const branches = (COUNTERPARTY_INPUT_SCHEMA as any).properties.subject.oneOf;
+  const toolIdPattern = new RegExp(branches[0].pattern);
+  const urlPattern = new RegExp(branches[1].pattern);
+  // "https" satisfies a bare [a-z0-9.-]+, so the old tool-id pattern matched
+  // every URL too and oneOf rejected every valid URL subject.
+  assert.equal(toolIdPattern.test("https://example.com/x"), false);
+  assert.equal(urlPattern.test("https://example.com/x"), true);
+  assert.equal(toolIdPattern.test("nasdaq:/get_stock_quote"), true);
+  assert.equal(urlPattern.test("nasdaq:/get_stock_quote"), false);
 });
