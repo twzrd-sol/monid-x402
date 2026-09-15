@@ -51,13 +51,18 @@ export type WashSighting =
 
 /**
  * Wallet-keyed. Same on EVM and Solana. Full coverage is wash_flagged=false,
- * wash_confidence=full, ring evaluated, not stale. Anything else on a 200
+ * confidence=full, ring evaluated, not stale. Anything else on a 200
  * card is unknown — not clean.
+ *
+ * merchant_card_v1.6 emits `confidence`; older cards emitted `wash_confidence`.
+ * Read both, preferring the legacy key, so a schema rename cannot silently
+ * collapse every seller to unknown and refuse the whole rail.
  */
 export function merchantCardCoverage(body: Record<string, unknown>): MerchantCardCoverage {
   if (body.wash_flagged === true) return "flagged";
   if (body.wash_flagged !== false) return "unknown";
-  if (body.wash_confidence !== "full") return "unknown";
+  const washConfidence = body.wash_confidence ?? body.confidence;
+  if (washConfidence !== "full") return "unknown";
   if (body.ring_evaluated === false) return "unknown";
   if (body.wash_stale === true) return "unknown";
   return "full";

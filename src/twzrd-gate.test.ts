@@ -93,6 +93,35 @@ test("merchant-card coverage is wallet-keyed: full vs unknown vs flagged", () =>
   assert.equal(merchantCardCoverage({}), "unknown");
 });
 
+test("merchant_card_v1.6 shape (confidence, not wash_confidence) is read as full", () => {
+  // Verbatim shape returned by GET /v1/intel/merchant_card/{wallet} on
+  // 2026-09-15. v1.6 renamed wash_confidence -> confidence; reading only the
+  // old key collapsed every 200 card to unknown and refused the entire rail.
+  const liveCard = {
+    card_version: "merchant_card_v1.6",
+    confidence: "full",
+    decision: "no_negative_signal",
+    merchant: "0x9d3d9410be95fa1d230734b961997427fc61d837",
+    reason: "Real inbound demand observed, no wash pattern.",
+    recommendation: "proceed_small_spend",
+    wash_flagged: false
+  };
+  assert.equal(merchantCardCoverage(liveCard), "full");
+
+  // Still strict: a v1.6 card without full confidence stays unknown.
+  assert.equal(merchantCardCoverage({ ...liveCard, confidence: null }), "unknown");
+  assert.equal(merchantCardCoverage({ ...liveCard, confidence: "partial" }), "unknown");
+
+  // Flagged still hard-stops regardless of which confidence key is present.
+  assert.equal(merchantCardCoverage({ ...liveCard, wash_flagged: true }), "flagged");
+
+  // Legacy key still wins when both are present.
+  assert.equal(
+    merchantCardCoverage({ ...liveCard, wash_confidence: "partial" }),
+    "unknown"
+  );
+});
+
 test("local policy abort runs before the TWZRD hook", async () => {
   let twzrdCalls = 0;
   const hook = composeBeforePaymentCreation(defaultPolicy({ maxAmountMicro: 1n }), {
