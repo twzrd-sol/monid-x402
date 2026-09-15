@@ -40,6 +40,11 @@ export function gradeLedgerPackets(
 ): Pick<VerifyCheck, "id" | "pass" | "detail" | "witnesses">[] {
   const refuses = packets.filter((row) => row.rec.decision === "refuse");
   const paidOk = packets.filter((row) => packetSettled(row.rec));
+  const paidLabeled = packets.filter((row) => row.rec.decision === "paid");
+  const paidUnsettled = paidLabeled.filter((row) => !packetSettled(row.rec));
+  const spendClaimers = paidUnsettled.filter(
+    (row) => typeof row.rec.usdc_spent === "number" && row.rec.usdc_spent > 0
+  );
   const prepaidHit = packets.some((row) =>
     String(row.rec.resource ?? "").includes("api.monid.ai/v1/run")
   );
@@ -57,6 +62,22 @@ export function gradeLedgerPackets(
       pass: paidOk.length >= 1,
       detail: `${paidOk.length} ledger paid packets are settled (HTTP 200, PAYMENT-RESPONSE, usdc_spent > 0)`,
       witnesses: [...paidOk.map((row) => `evidence/ledger/${row.name}`), "evidence/live-pay-200.json"]
+    },
+    {
+      id: "no_unsettled_packet_claims_spend",
+      pass: spendClaimers.length === 0,
+      detail:
+        `${paidLabeled.length} packets are labeled paid, ${paidOk.length} settled, ` +
+        `${paidUnsettled.length} unsettled; ${spendClaimers.length} of those claim usdc_spent > 0` +
+        (spendClaimers.length > 0
+          ? ` (${spendClaimers
+              .map(
+                (row) =>
+                  `${row.name} http_status ${String(row.rec.http_status)} claims ${String(row.rec.usdc_spent)}`
+              )
+              .join("; ")})`
+          : ""),
+      witnesses: paidUnsettled.map((row) => `evidence/ledger/${row.name}`)
     },
     {
       id: "no_prepaid_api_monid_resource",
