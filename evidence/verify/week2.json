@@ -4,7 +4,7 @@
   "rail": "monid-x402",
   "path": "Default Path 1",
   "path_statement": "every execution that can 402 does 402 and nothing signs until policy says so",
-  "gradedAt": "2026-09-15T22:15:24Z",
+  "gradedAt": "2026-09-15T23:41:07Z",
   "grader": "same-session grade; did not claim an independent lane",
   "spent": false,
   "payment_header_sent": false,
@@ -84,6 +84,8 @@
     "evidence/ledger/20260915T024406Z-spend_gated-0002.json",
     "evidence/ledger/20260915T024406Z-spend_gated-0003.json",
     "evidence/ledger/20260915T024406Z-spend_gated-0004.json",
+    "evidence/ledger/20260915T225739Z-refuse-0001.json",
+    "evidence/ledger/20260915T225743Z-refuse-0001.json",
     "evidence/ledger/pay-funding-gap.v1.json",
     "evidence/ledger/twzrd-wash-unknown.v1.json",
     "evidence/live-pay-200.json",
@@ -98,7 +100,7 @@
     {
       "id": "refuse_zero_sign_zero_spend",
       "pass": true,
-      "detail": "14 ledger refuse packets have signer_invocation_count 0 and usdc_spent 0",
+      "detail": "16 ledger refuse packets have signer_invocation_count 0 and usdc_spent 0",
       "witnesses": [
         "evidence/ledger/2026-09-12T034010355Z-refuse.json",
         "evidence/ledger/2026-09-12T034459893Z-refuse.json",
@@ -113,6 +115,8 @@
         "evidence/ledger/20260915T024406Z-refuse-0001.json",
         "evidence/ledger/20260915T024406Z-refuse-0002.json",
         "evidence/ledger/20260915T024406Z-refuse-0003.json",
+        "evidence/ledger/20260915T225739Z-refuse-0001.json",
+        "evidence/ledger/20260915T225743Z-refuse-0001.json",
         "evidence/ledger/twzrd-wash-unknown.v1.json"
       ]
     },

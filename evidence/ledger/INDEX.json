@@ -481,6 +481,30 @@
       "capturedAt": "2026-09-15T02:44:06.886Z"
     },
     {
+      "name": "20260915T225739Z-refuse-0001.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": 402,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-15T22:57:39.873Z"
+    },
+    {
+      "name": "20260915T225743Z-refuse-0001.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": 402,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-09-15T22:57:43.795Z"
+    },
+    {
       "name": "pay-funding-gap.v1.json",
       "decision": null,
       "schema": "twzrd.pay_attempt.v1",
@@ -506,7 +530,7 @@
     }
   ],
   "totals": {
-    "refuse": 14,
+    "refuse": 16,
     "paid": 5,
     "paid_settled": 5,
     "mislabeled_paid": 0,
