@@ -5,6 +5,7 @@
  * missing evidence to approval. USDC settles to Monid, not TWZRD.
  */
 import { MONID_X402_RUN_URL, RAIL } from "./constants.js";
+import { COUNTERPARTY_SKU, TIERS, counterpartySkuCard } from "./counterparty-sku.js";
 import { scrapePayInput } from "./input.js";
 import { hasRefusePacket } from "./ledger.js";
 import { PayGatedError, payRun, type PayResult } from "./pay.js";
@@ -46,6 +47,26 @@ export function productCatalog() {
           note: "USDC settles to Monid payTo. TWZRD has no take-rate on this SKU."
         },
         incumbent: INCUMBENT
+      },
+      {
+        sku: COUNTERPARTY_SKU,
+        job: "Resolve who actually answers a paid call before an agent pays it.",
+        quote: "quoteCounterparty({ tier, subjectsSubmitted, distinctCounterparties })",
+        run: "tool-audit `catalog-provenance` (free) then `cohort-screen` (paid)",
+        pay: "Not yet payable on this rail. No signer has fired for this SKU.",
+        operate: "tool-audit pages/counterparty.html",
+        priceUsd: {
+          provenance: TIERS.provenance.priceUsd,
+          posture: TIERS.posture.priceUsd,
+          cohort: `${TIERS.cohort.priceUsd} per DISTINCT counterparty`
+        },
+        settlement: {
+          recipient: "unsettled" as const,
+          takeRate: 0 as const,
+          currency: "USDC" as const,
+          note: "Priced, schema'd, and costed against a measured COGS. Not yet sold; this rail has taken no payment."
+        },
+        marketCheck: counterpartySkuCard().marketCheck
       },
       {
         sku: "company-brief",
