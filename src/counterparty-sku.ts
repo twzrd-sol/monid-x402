@@ -265,13 +265,16 @@ export function counterpartySkuCard() {
       source: "tool-audit evidence/market-scan.json",
       endpointsSwept: 412,
       providersSwept: 63,
-      sellingTextExtraction: 67,
-      textExtractionProviders: 11,
+      // Listings, not sellers: 67 text-extraction LISTINGS come from 11
+      // providers. Reading the listing count as a seller count overstates the
+      // competition six fold.
+      textExtractionListings: 67,
+      textExtractionSellers: 11,
       textExtractionFloorUsd: 0.00009,
-      sellingCounterpartyProvenance: 0,
+      counterpartyProvenanceSellers: 0,
       counterpartyKeywordMatches: 1,
       counterpartyExcludedOnReview: "weather-underground:/get_historical_airport — historical airport weather, not endpoint provenance",
-      adjacentWhoisSellers: 5,
+      adjacentWhoisListings: 5,
       adjacentNote: "WHOIS reports who registered a domain. It does not report that a listing's asserted brand is not the party that answers.",
       sweptAt: "2026-09-15",
       coverage: "endpoints surfaced by 25 seed queries; a floor on how many sellers exist, not a census"

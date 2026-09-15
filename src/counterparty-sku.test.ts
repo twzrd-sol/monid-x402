@@ -77,15 +77,15 @@ test("every quote states the limits and claims no settled payment", () => {
 
 test("the sku card reports the market check that justifies the price", () => {
   const card = counterpartySkuCard();
-  assert.equal(card.marketCheck.sellingCounterpartyProvenance, 0);
-  assert.equal(card.marketCheck.sellingTextExtraction, 67);
+  assert.equal(card.marketCheck.counterpartyProvenanceSellers, 0);
+  assert.equal(card.marketCheck.textExtractionListings, 67);
   assert.equal(card.marketCheck.endpointsSwept, 412);
   assert.equal(card.canPay, false);
   // The one keyword match must stay visible with its reason, not vanish.
   assert.equal(card.marketCheck.counterpartyKeywordMatches, 1);
   assert.match(card.marketCheck.counterpartyExcludedOnReview, /not endpoint provenance/);
   // WHOIS is adjacent, and the card must say why it is not the same product.
-  assert.ok(card.marketCheck.adjacentWhoisSellers > 0);
+  assert.ok(card.marketCheck.adjacentWhoisListings > 0);
   assert.match(card.marketCheck.adjacentNote, /does not report/);
 });
 
@@ -108,4 +108,13 @@ test("a URL subject matches exactly one branch of the input schema", () => {
   assert.equal(urlPattern.test("https://example.com/x"), true);
   assert.equal(toolIdPattern.test("nasdaq:/get_stock_quote"), true);
   assert.equal(urlPattern.test("nasdaq:/get_stock_quote"), false);
+});
+
+test("the market check separates listings from sellers", () => {
+  const m = counterpartySkuCard().marketCheck;
+  // 67 text-extraction LISTINGS come from 11 providers. Reporting 67 as a
+  // seller count overstates the competition six fold.
+  assert.equal(m.textExtractionListings, 67);
+  assert.equal(m.textExtractionSellers, 11);
+  assert.ok(m.textExtractionListings > m.textExtractionSellers);
 });
