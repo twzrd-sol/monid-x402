@@ -62,10 +62,20 @@ test("product catalog lists sellable SKUs without claiming a take-rate", () => {
   assert.equal(catalog.canPay, false);
   assert.deepEqual(
     catalog.skus.map((row) => row.sku),
-    ["vendor-prescreen", "company-brief"]
+    ["vendor-prescreen", "counterparty-provenance", "company-brief"]
   );
   assert.equal(catalog.skus[0]?.settlement.takeRate, 0);
   assert.equal(catalog.skus[0]?.settlement.recipient, "monid");
+  // No SKU may claim a take-rate, and none may imply money has moved.
+  for (const row of catalog.skus) {
+    assert.equal(row.settlement.takeRate, 0, `${row.sku} claims a take-rate`);
+    assert.equal(row.settlement.currency, "USDC");
+  }
+  // The unsold SKU must say so rather than borrowing the rail's credibility.
+  const counterparty = catalog.skus.find((row) => row.sku === "counterparty-provenance");
+  assert.equal(counterparty?.settlement.recipient, "unsettled");
+  assert.match(counterparty?.settlement.note ?? "", /has taken no payment/);
+  assert.match(counterparty?.pay ?? "", /No signer has fired/);
 });
 
 test("vendor-prescreen is the tool-audit three-call job on x402, not a catalog dump", () => {
