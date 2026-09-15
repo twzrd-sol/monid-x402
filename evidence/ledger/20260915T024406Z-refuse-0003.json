@@ -1,0 +1,20 @@
+{
+  "schema": "monid-x402.ledger.v1",
+  "kind": "refuse",
+  "httpStatus": 402,
+  "receipt": {
+    "schema": "twzrd.gate_eval_refuse.v1",
+    "rail": "monid-x402",
+    "resource": "https://x402.monid.ai/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+    "provider": "x402.monid.ai",
+    "endpoint": "/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
+    "selected": null,
+    "decision": "refuse",
+    "reason": "SIWX retrieve 402 has no payable accepts[]. Identity sign is not a USDC offer. Nothing signs.",
+    "code": "siwx_no_pay_offer",
+    "signer_invocation_count": 0,
+    "usdc_spent": 0,
+    "capturedAt": "2026-09-15T02:44:06.873Z"
+  },
+  "appendedAt": "2026-09-15T02:44:06.873Z"
+}

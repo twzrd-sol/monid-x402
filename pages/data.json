@@ -1,14 +1,22 @@
 {
-  "schema": "twzrd.gate_eval_refuse.v1",
+  "schema": "twzrd.gate_eval_paid.v1",
   "rail": "monid-x402",
-  "resource": "https://x402.monid.ai/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
-  "provider": "x402.monid.ai",
-  "endpoint": "/v1/runs/01M2BC306GSMD00DZZAPNSCSAZ",
-  "selected": null,
-  "decision": "refuse",
-  "reason": "SIWX retrieve 402 has no payable accepts[]. Identity sign is not a USDC offer. Nothing signs.",
-  "code": "siwx_no_pay_offer",
-  "signer_invocation_count": 0,
-  "usdc_spent": 0,
-  "capturedAt": "2026-09-12T17:59:16.254Z"
+  "resource": "https://x402.monid.ai/v1/run",
+  "provider": "context.dev",
+  "endpoint": "/web/scrape/markdown",
+  "selected": {
+    "network": "eip155:8453",
+    "amount": "10000",
+    "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  "decision": "paid",
+  "http_status": 200,
+  "payment_response": "eyJzdWNjZXNzIjp0cnVlLCJwYXllciI6IjB4YTRiOTQxMURkQkE0QTkxOWQwNzEwNjlGOThFNjRjMjJhZWIxZDM5YyIsInRyYW5zYWN0aW9uIjoiMHgzZDkzYjNiNzc2Y2JmYTk3ZWRiNGU2NTJlMmI2ZWQ0ZjAwMjU2MGVjODc5ZjViZmM5YjVlMjRjMGJkNzBjZTAzIiwibmV0d29yayI6ImVpcDE1NTo4NDUzIn0=",
+  "payer": "0xa4b9411DdBA4A919d071069F98E64c22aeb1d39c",
+  "transaction": "0x3d93b3b776cbfa97edb4e652e2b6ed4f002560ec879f5bfc9b5e24c0bd70ce03",
+  "network": "eip155:8453",
+  "signer_invocation_count": 1,
+  "usdc_spent": 0.01,
+  "capturedAt": "2026-09-15T19:40:40.680Z"
 }

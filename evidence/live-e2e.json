@@ -39,6 +39,17 @@
     },
     "list": {
       "status": 501
+    },
+    "product_catalog": {
+      "status": 200,
+      "schema": "twzrd.product_catalog.v1"
+    },
+    "product_confirm": {
+      "status": 403,
+      "code": "spend_gated",
+      "schema": "twzrd.gate_eval_spend_gated.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0
     }
   }
 }

@@ -1,0 +1,196 @@
+{
+  "schema": "monid-x402.ledger.v1",
+  "kind": "run",
+  "httpStatus": 403,
+  "receipt": {
+    "schema": "twzrd.product_run.v1",
+    "sku": "vendor-prescreen",
+    "rail": "monid-x402",
+    "targetUrl": "https://monid.ai/",
+    "quote": {
+      "schema": "twzrd.product_quote.v1",
+      "sku": "vendor-prescreen",
+      "rail": "monid-x402",
+      "targetUrl": "https://monid.ai/",
+      "incumbent": {
+        "name": "Vendorapp Startup",
+        "source": "tool-audit measured snapshot 2026-09-11",
+        "monthlyPriceUsd": 149,
+        "includedPrescreens": 200,
+        "perJobUsd": 0.745
+      },
+      "steps": [
+        {
+          "role": "public_offer",
+          "provider": "context.dev",
+          "endpoint": "/web/scrape/markdown",
+          "class": "x402",
+          "amount": "10000",
+          "usd": 0.01,
+          "network": "eip155:8453",
+          "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837"
+        },
+        {
+          "role": "security_headers",
+          "provider": "api.strale.io",
+          "endpoint": "/x402/header-security-check",
+          "class": "x402",
+          "amount": "59400",
+          "usd": 0.0594,
+          "network": "eip155:8453",
+          "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837"
+        },
+        {
+          "role": "cookie_consent",
+          "provider": "api.strale.io",
+          "endpoint": "/x402/v2/cookie-scan",
+          "class": "x402",
+          "amount": "178200",
+          "usd": 0.1782,
+          "network": "eip155:8453",
+          "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837"
+        }
+      ],
+      "quote": {
+        "stepCount": 3,
+        "totalMicro": "247600",
+        "totalUsd": 0.2476,
+        "currency": "USDC",
+        "capMicro": "300000"
+      },
+      "vsIncumbent": {
+        "incumbentPerJobUsd": 0.745,
+        "oursUsd": 0.2476,
+        "deltaUsd": 0.4974,
+        "note": "Incumbent per-job is $149/200 from the frozen tool-audit snapshot. Not a live Vendorapp fetch."
+      },
+      "decision": "quote",
+      "canPay": false,
+      "nextGate": "confirm_spend",
+      "blocker": "Quote allowed under cap. Listen has no wallet. Confirm-spend is CLI only.",
+      "nextStep": "Operator runs `product --confirm-spend` only after a refuse packet exists. Do not invent a key.",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "quotedAt": "2026-09-12T17:59:07.755Z"
+    },
+    "settlement": {
+      "recipient": "monid",
+      "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+      "payTos": [
+        "0x9D3d9410Be95fa1d230734B961997427fc61D837"
+      ],
+      "takeRate": 0,
+      "currency": "USDC",
+      "note": "USDC settles to Monid payTo. TWZRD has no take-rate on this SKU."
+    },
+    "steps": [
+      {
+        "role": "public_offer",
+        "why": "Read the target's current public page. First-pass evidence, not a Vendorapp film.",
+        "provider": "context.dev",
+        "endpoint": "/web/scrape/markdown",
+        "kind": "quoted"
+      },
+      {
+        "role": "security_headers",
+        "why": "Inspect security headers before any downstream tool spend.",
+        "provider": "api.strale.io",
+        "endpoint": "/x402/header-security-check",
+        "kind": "quoted"
+      },
+      {
+        "role": "cookie_consent",
+        "why": "Inspect cookie/consent evidence. Partial HTML stays review_required, not a green check.",
+        "provider": "api.strale.io",
+        "endpoint": "/x402/v2/cookie-scan",
+        "kind": "quoted"
+      }
+    ],
+    "deliver": {
+      "schema": "twzrd.product_deliver.v1",
+      "sku": "vendor-prescreen",
+      "rail": "monid-x402",
+      "targetUrl": "https://monid.ai/",
+      "delivered": false,
+      "verdict": "incomplete",
+      "findings": {
+        "publicOffer": {
+          "present": false
+        },
+        "missingSecurityHeaders": [],
+        "headerPotentialIssues": [],
+        "cookiePotentialIssues": []
+      },
+      "steps": [
+        {
+          "role": "public_offer",
+          "why": "Read the target's current public page. First-pass evidence, not a Vendorapp film.",
+          "provider": "context.dev",
+          "endpoint": "/web/scrape/markdown",
+          "kind": "quoted"
+        },
+        {
+          "role": "security_headers",
+          "why": "Inspect security headers before any downstream tool spend.",
+          "provider": "api.strale.io",
+          "endpoint": "/x402/header-security-check",
+          "kind": "quoted"
+        },
+        {
+          "role": "cookie_consent",
+          "why": "Inspect cookie/consent evidence. Partial HTML stays review_required, not a green check.",
+          "provider": "api.strale.io",
+          "endpoint": "/x402/v2/cookie-scan",
+          "kind": "quoted"
+        }
+      ],
+      "limitations": [
+        "Not delivered. Unpaid steps: public_offer, security_headers, cookie_consent.",
+        "This replaces first-pass evidence collection before downstream tool spend—not monitoring, remediation, contracts, or human review.",
+        "Incumbent $149/200 is the frozen tool-audit snapshot. Not a live Vendorapp fetch.",
+        "USDC settles to Monid payTo. TWZRD take-rate is 0."
+      ],
+      "vsIncumbent": {
+        "incumbentPerJobUsd": 0.745,
+        "oursUsd": 0.2476,
+        "deltaUsd": 0.4974,
+        "note": "Incumbent per-job is $149/200 from the frozen tool-audit snapshot. Not a live Vendorapp fetch."
+      },
+      "settlement": {
+        "recipient": "monid",
+        "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
+        "payTos": [
+          "0x9D3d9410Be95fa1d230734B961997427fc61D837"
+        ],
+        "takeRate": 0,
+        "currency": "USDC",
+        "note": "USDC settles to Monid payTo. TWZRD has no take-rate on this SKU."
+      },
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "capturedAt": "2026-09-12T17:59:07.755Z"
+    },
+    "decision": "held",
+    "canPay": false,
+    "nextGate": "proxy_wallet",
+    "blocker": "SKU run confirm is not enough. Listen has no wallet. Buyer pays via CLI `product --confirm-spend` after a refuse packet.",
+    "nextStep": "Buyer pays via CLI `product --confirm-spend` after a refuse packet. Listen has no wallet. Do not invent a key.",
+    "signer_invocation_count": 0,
+    "usdc_spent": 0,
+    "capturedAt": "2026-09-12T17:59:07.755Z",
+    "hold": {
+      "schema": "twzrd.gate_eval_spend_gated.v1",
+      "rail": "monid-x402",
+      "resource": "https://x402.monid.ai/v1/run",
+      "provider": "vendor-prescreen",
+      "endpoint": "/run",
+      "decision": "spend_gated",
+      "reason": "SKU run confirm is not enough. Listen has no wallet. Buyer pays via CLI `product --confirm-spend` after a refuse packet.",
+      "code": "spend_gated",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "capturedAt": "2026-09-12T17:59:07.755Z"
+    }
+  },
+  "appendedAt": "2026-09-12T17:59:07.755Z"
+}
