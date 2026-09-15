@@ -75,8 +75,15 @@ test("every quote states the limits and claims no settled payment", () => {
 test("the sku card reports the market check that justifies the price", () => {
   const card = counterpartySkuCard();
   assert.equal(card.marketCheck.sellingCounterpartyProvenance, 0);
-  assert.equal(card.marketCheck.sellingTextExtraction, 58);
+  assert.equal(card.marketCheck.sellingTextExtraction, 67);
+  assert.equal(card.marketCheck.endpointsSwept, 412);
   assert.equal(card.canPay, false);
+  // The one keyword match must stay visible with its reason, not vanish.
+  assert.equal(card.marketCheck.counterpartyKeywordMatches, 1);
+  assert.match(card.marketCheck.counterpartyExcludedOnReview, /not endpoint provenance/);
+  // WHOIS is adjacent, and the card must say why it is not the same product.
+  assert.ok(card.marketCheck.adjacentWhoisSellers > 0);
+  assert.match(card.marketCheck.adjacentNote, /does not report/);
 });
 
 test("the published schemas constrain what an agent may send and expect", () => {
