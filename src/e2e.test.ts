@@ -26,7 +26,7 @@ test("proveListenE2E walks health, refuse, spend_gated, SIWX retrieve, list 501,
           rail: "monid-x402",
           listen: "8788",
           prepaid_run: false,
-          twzrd_gate: "0.9.5",
+          twzrd_gate: "0.9.9",
           sku: "vendor-prescreen"
         });
       }

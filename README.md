@@ -54,18 +54,19 @@ npm run quote:live
 Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
 `@x402/fetch` + `ExactEvmScheme`. Local policy still runs on the 402
 *before* the signer is constructed, and again first on
-`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.7`
-runs a wash-only `GET merchant_card/{payTo}` (Base and Monad). This
-client does not select the full preflight engine.
+`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.9`
+evaluates Base through the full preflight path and enforces the seller's
+recommended cap before signing. The adapter also checks merchant-card wash
+coverage before the signer exists.
 
 On this pin: `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200
 card with missing, partial, or stale coverage also aborts
-(`twzrd_wash_unknown`) — 0.9.7 refuses that on a returned card; this
-client still refuses after a package allow. Fast lookup failures (503,
-network, invalid JSON) still allow inside the package.
-`TWZRD_FAIL_OPEN=false` only covers our 2s outer timeout/throw, not
-those package-internal allows. Lookups we send carry
-`X-Twzrd-Caller: monid-x402/<version>@0.9.7` and
+(`twzrd_wash_unknown`) — 0.9.9 refuses that on a returned card; this
+client still refuses after a package allow. On scored Base, fast lookup
+failures (503, network, invalid JSON) fail closed by default; set the
+package's `TWZRD_FAIL_OPEN=true` only when that availability tradeoff is
+intentional. Lookups we send carry
+`X-Twzrd-Caller: monid-x402/<version>@0.9.9` and
 `X-TWZRD-Integration: monid-x402/<version>`. This rail is EVM and does
 not register Solana.
 
@@ -105,7 +106,7 @@ export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
 `GET /health` reports the bound port, `prepaid_run: false`, and
-`twzrd_gate: "0.9.7"`. `GET /` is the operate desk. Confirm on listen
+`twzrd_gate: "0.9.9"`. `GET /` is the operate desk. Confirm on listen
 is still 403 — no proxy wallet. Pay is CLI `pay --confirm-spend` only.
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse
 or `spend_gated` packet. It never calls prepaid `api.monid.ai/v1/run`.

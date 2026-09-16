@@ -63,8 +63,9 @@ After `monid inspect` and **before** any client constructs a signer:
    Coverage (`wash_confidence` / `confidence`, `ring_evaluated`, `wash_stale`)
    lives in this adapter — there is no upstream twin. Pin the version that
    produced the receipt you will show: this listen and its settled packet
-   are `0.9.5`. `monid-x402` main already pins `0.9.9` (Base is evaluated
-   inside the package). Do not mix them in one judged trace. Local policy
+   were captured against `0.9.5`; the current `monid-x402` main pins `0.9.9`
+   (Base is evaluated inside the package). Do not mix them in one judged trace.
+   Local policy
    still runs first (amount cap, network, resource). Do not resolve
    `twzrd-x402-gate` as `^0.10` — `0.10.1` outranks `0.9.9` by semver and
    is eight days older.
