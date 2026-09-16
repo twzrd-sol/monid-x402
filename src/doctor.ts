@@ -1,7 +1,8 @@
-import { MONID_API_URL } from "./constants.js";
+import { MONID_API_URL, TWZRD_GATE_PIN } from "./constants.js";
 import { checkMatrix, loadMatrix } from "./drift.js";
 import { DEFAULT_E2E_RUN_ID } from "./e2e.js";
 import { rebuildLedgerIndex } from "./ledger.js";
+import { PRODUCT_CATALOG_SCHEMA, PRODUCT_SKU } from "./product.js";
 
 export type DoctorCheck = { id: string; pass: boolean; detail: string };
 
@@ -38,6 +39,11 @@ export async function doctor(options: {
       id: "health_ok",
       pass: response.status === 200 && health.ok === true && health.prepaid_run === false,
       detail: `GET ${healthUrl} HTTP ${response.status} prepaid_run=${String(health.prepaid_run)}`
+    });
+    checks.push({
+      id: "health_gate",
+      pass: health.twzrd_gate === TWZRD_GATE_PIN && health.sku === PRODUCT_SKU,
+      detail: `twzrd_gate=${String(health.twzrd_gate)} sku=${String(health.sku)}`
     });
     checks.push({
       id: "not_prepaid_host",
@@ -99,6 +105,29 @@ export async function doctor(options: {
 
   const listenBase = healthUrl.replace(/\/health\/?$/, "");
   const runId = options.runId ?? env.MONID_RUN_ID ?? DEFAULT_E2E_RUN_ID;
+  try {
+    const catalog = await fetchImpl(`${listenBase}/v1/product`);
+    const body = (await catalog.json().catch(() => ({}))) as Record<string, unknown>;
+    const skus = Array.isArray(body.skus) ? body.skus : [];
+    const hasSku = skus.some(
+      (row) => row && typeof row === "object" && (row as { sku?: unknown }).sku === PRODUCT_SKU
+    );
+    checks.push({
+      id: "sku_catalog",
+      pass:
+        catalog.status === 200 &&
+        body.schema === PRODUCT_CATALOG_SCHEMA &&
+        body.canPay === false &&
+        hasSku,
+      detail: `GET /v1/product HTTP ${catalog.status} schema=${String(body.schema)} sku=${PRODUCT_SKU}`
+    });
+  } catch (error) {
+    checks.push({
+      id: "sku_catalog",
+      pass: false,
+      detail: error instanceof Error ? error.message : "product catalog failed"
+    });
+  }
   try {
     const retrieve = await fetchImpl(`${listenBase}/v1/runs/${runId}`);
     const body = (await retrieve.json().catch(() => ({}))) as Record<string, unknown>;

@@ -44,7 +44,7 @@ port, not a hardcoded 8788.
   "rail": "monid-x402",
   "listen": "8788",
   "prepaid_run": false,
-  "twzrd_gate": "0.9.7",
+  "twzrd_gate": "0.9.9",
   "desk": true,
   "sku": "vendor-prescreen"
 }
@@ -69,5 +69,8 @@ Closed week 3: unsigned `GET /v1/runs/:id` refuses SIWX. List stays 501.
 
 Closed week 5: confirm-sign + `MONID_LISTEN_PRIVATE_KEY` signs SIWX.
 Default listen still has no wallet.
+
+Week 6: `/health` must name `twzrd_gate` and `sku`. `GET /v1/product` is
+part of the door. Confirm stays 403.
 
 Still later: default listen wallet, prepaid list, Solana.

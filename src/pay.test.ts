@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { MONID_X402_RUN_URL } from "./constants.js";
-import { assertPayAuthorized, PayGatedError, payRun } from "./pay.js";
+import { assertPayAuthorized, PayGatedError, payRun, readPaymentResponseHeader } from "./pay.js";
 import { defaultPolicy } from "./policy.js";
 import { scrapePayInput } from "./input.js";
 
@@ -110,4 +110,32 @@ test("allow without a key does not construct a signer", async () => {
       }),
     (error: unknown) => error instanceof PayGatedError && /PRIVATE_KEY after policy allow/.test(error.message)
   );
+});
+
+test("the settlement header is read under both live spellings", () => {
+  const bare = new Headers();
+  bare.set("PAYMENT-RESPONSE", "eyJiYXJlIjp0cnVlfQ==");
+  assert.equal(readPaymentResponseHeader(bare), "eyJiYXJlIjp0cnVlfQ==");
+
+  // The legacy X- form. Headers.get is case-insensitive but NOT substring, so
+  // a bare lookup returns null here — which is how a settled payment used to
+  // be recorded as pay_failed after the signer had already run.
+  const prefixed = new Headers();
+  prefixed.set("X-PAYMENT-RESPONSE", "eyJ4Ijp0cnVlfQ==");
+  assert.equal(prefixed.get("PAYMENT-RESPONSE"), null, "bare lookup cannot see the X- form");
+  assert.equal(readPaymentResponseHeader(prefixed), "eyJ4Ijp0cnVlfQ==");
+
+  // Case is irrelevant on either spelling, so lowercase variants are not a
+  // separate lookup and must not be re-added as one.
+  const lower = new Headers();
+  lower.set("payment-response", "eyJsb3dlciI6dHJ1ZX0=");
+  assert.equal(readPaymentResponseHeader(lower), "eyJsb3dlciI6dHJ1ZX0=");
+
+  // The bare form wins when a host sends both.
+  const both = new Headers();
+  both.set("PAYMENT-RESPONSE", "bare-wins");
+  both.append("X-PAYMENT-RESPONSE", "legacy");
+  assert.equal(readPaymentResponseHeader(both), "bare-wins");
+
+  assert.equal(readPaymentResponseHeader(new Headers()), null);
 });

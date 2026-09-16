@@ -1,0 +1,19 @@
+{
+  "schema": "monid-x402.ledger.v1",
+  "kind": "spend_gated",
+  "httpStatus": 403,
+  "receipt": {
+    "schema": "twzrd.gate_eval_refuse.v1",
+    "rail": "monid-x402",
+    "resource": "https://x402.monid.ai/v1/run",
+    "provider": "context.dev",
+    "endpoint": "/web/scrape/markdown",
+    "decision": "spend_gated",
+    "reason": "Week 0: no proxy wallet. Confirm is not enough to sign.",
+    "code": "spend_gated",
+    "signer_invocation_count": 0,
+    "usdc_spent": 0,
+    "capturedAt": "2026-09-12T17:43:15.292Z"
+  },
+  "appendedAt": "2026-09-12T17:43:15.292Z"
+}

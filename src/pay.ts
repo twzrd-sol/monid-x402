@@ -20,6 +20,23 @@ import type {
   X402Accept
 } from "./types.js";
 
+/**
+ * Read the x402 settlement header off a paid response.
+ *
+ * Both spellings are live. `@x402/core`'s own `getPaymentSettleResponse` tries
+ * `PAYMENT-RESPONSE` first and falls back to the legacy `X-PAYMENT-RESPONSE`,
+ * so a host may answer with either. `Headers.get` is case-insensitive but not
+ * substring-matching, so a bare lookup silently misses the X- prefixed form.
+ *
+ * Missing it is the worst failure shape available on this path: the signer has
+ * already run and the USDC has already moved, so a miss writes a pay_failed
+ * packet for a payment that actually settled, and the ledger agrees with
+ * itself about the wrong answer.
+ */
+export function readPaymentResponseHeader(headers: Headers): string | null {
+  return headers.get("PAYMENT-RESPONSE") ?? headers.get("X-PAYMENT-RESPONSE");
+}
+
 export class PayGatedError extends Error {
   constructor(message: string) {
     super(message);
@@ -143,10 +160,7 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
       })
     });
     const body = await response.json().catch(() => null);
-    const paymentResponse =
-      response.headers.get("PAYMENT-RESPONSE") ??
-      response.headers.get("payment-response") ??
-      response.headers.get("Payment-Response");
+    const paymentResponse = readPaymentResponseHeader(response.headers);
     if (response.status === 402 || response.status >= 400) {
       const snippet = redact(JSON.stringify(body) ?? "").slice(0, 240);
       return {

@@ -1,0 +1,21 @@
+{
+  "schema": "monid-x402.ledger.v1",
+  "kind": "spend_gated",
+  "httpStatus": 403,
+  "receipt": {
+    "schema": "twzrd.gate_eval_spend_gated.v1",
+    "rail": "monid-x402",
+    "resource": "https://x402.monid.ai/v1/run",
+    "provider": "vendor-prescreen",
+    "endpoint": "/quote",
+    "decision": "spend_gated",
+    "reason": "SKU quote is not enough. Listen has no wallet. Pay is CLI `product --confirm-spend` after a refuse packet.",
+    "code": "spend_gated",
+    "signer_invocation_count": 0,
+    "usdc_spent": 0,
+    "capturedAt": "2026-09-12T17:53:25.329Z",
+    "sku": "vendor-prescreen",
+    "targetUrl": "https://monid.ai"
+  },
+  "appendedAt": "2026-09-12T17:53:25.329Z"
+}

@@ -1,5 +1,5 @@
 {
-  "schema": "twzrd.gate_eval_paid.v1",
+  "schema": "twzrd.gate_eval_pay_failed.v1",
   "rail": "monid-x402",
   "resource": "https://x402.monid.ai/v1/run",
   "provider": "context.dev",
@@ -10,10 +10,18 @@
     "payTo": "0x9D3d9410Be95fa1d230734B961997427fc61D837",
     "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
   },
-  "decision": "paid",
-  "http_status": 402,
-  "payment_response": null,
+  "decision": "pay_failed",
+  "reason": "upstream HTTP 402 after signer construct; missing PAYMENT-RESPONSE",
+  "code": "still_402",
   "signer_invocation_count": 1,
-  "usdc_spent": 0.01,
-  "capturedAt": "2026-09-12T03:40:13.953Z"
+  "usdc_spent": 0,
+  "capturedAt": "2026-09-12T03:40:13.953Z",
+  "relabeled_from": {
+    "schema": "twzrd.gate_eval_paid.v1",
+    "decision": "paid",
+    "usdc_spent": 0.01,
+    "http_status": 402,
+    "relabeled_at": "2026-09-15",
+    "reason": "Written by a pre-fix build that labeled a 402 as paid and recorded usdc_spent 0.01 for a request that never settled. No payment_response, no transaction hash, and no sixth on-chain settlement exists. Current pay.js emits gate_eval_pay_failed.v1 with usdc_spent 0 for this exact response. Corrected to what the code would write today; nothing about the original attempt is disputed except its label."
+  }
 }

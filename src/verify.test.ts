@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import type { LedgerPacket } from "./ledger.js";
 import { gradeLedgerPackets, gradeSiwxRetrieve } from "./verify.js";
 
 test("gradeLedgerPackets fails closed on prepaid resource and missing refuse", () => {
@@ -69,4 +70,38 @@ test("gradeSiwxRetrieve fails closed if accepts are payable or a signer moved", 
     usdc: 0
   });
   assert.ok(pass.every((row) => row.pass));
+});
+
+test("no_unsettled_packet_claims_spend fails when a 402 packet claims spend", () => {
+  // Regression: 2026-09-12T034013954Z-paid.json was written by a pre-fix build
+  // that labeled a 402 as paid and still recorded usdc_spent 0.01. The grader
+  // excluded it from the settled count but nothing failed, so a naive sum over
+  // *-paid.json reported $0.06 across 6 payments instead of $0.05 across 5.
+  const unsettled402 = {
+    name: "402-labeled-paid.json",
+    rec: {
+      decision: "paid",
+      http_status: 402,
+      signer_invocation_count: 1,
+      usdc_spent: 0.01
+    } as unknown as LedgerPacket
+  };
+  const checks = gradeLedgerPackets([unsettled402]);
+  const check = checks.find((c) => c.id === "no_unsettled_packet_claims_spend");
+  assert.ok(check, "check must be present");
+  assert.equal(check!.pass, false);
+  assert.match(check!.detail, /1 of those claim usdc_spent > 0/);
+
+  // usdc_spent 0 on an unsettled packet is the correct shape and passes.
+  const honestFailure = {
+    name: "402-labeled-failed.json",
+    rec: {
+      decision: "pay_failed",
+      http_status: 402,
+      signer_invocation_count: 1,
+      usdc_spent: 0
+    } as unknown as LedgerPacket
+  };
+  const clean = gradeLedgerPackets([honestFailure]);
+  assert.equal(clean.find((c) => c.id === "no_unsettled_packet_claims_spend")!.pass, true);
 });
