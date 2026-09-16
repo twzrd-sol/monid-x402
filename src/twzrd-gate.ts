@@ -1,17 +1,18 @@
 /**
  * TWZRD wash seat on this paying client, after local policy.
  *
- * Published twzrd-x402-gate@0.9.5. This rail is EVM only (Base / Monad).
- * createTwzrdBeforePaymentHook → twzrdApprovePayment treats eip155 as
- * unscored: observe mode skips POST /v1/intel/preflight and does one
- * GET merchant_card/{payTo}. wash_flagged=true aborts (twzrd_wash_flagged).
- * HTTP 503 / network / non-JSON become allow inside the package —
- * TWZRD_FAIL_OPEN=false cannot reach that. A 200 card that is missing,
- * partial, or stale coverage is not clean: we refuse twzrd_wash_unknown
- * after the package allows. That tighten is ours; 0.9.5 does not.
+ * Published twzrd-x402-gate@0.9.7. This rail is EVM only (Base / Monad).
+ * createTwzrdBeforePaymentHook default wash engine skips POST
+ * /v1/intel/preflight and does one GET merchant_card/{payTo}.
+ * wash_flagged=true aborts (twzrd_wash_flagged). A returned 200 card
+ * with missing, partial, or stale coverage also aborts in 0.9.7
+ * (twzrd_wash_unknown). HTTP 503 / network / non-JSON still allow
+ * inside the package — TWZRD_FAIL_OPEN=false cannot reach that.
+ * We still refuse twzrd_wash_unknown after a package allow so this
+ * seat stays honest if the hook fail-opens.
  *
- * 0.9.5's merchant_card GET sends Accept only. We wrap fetch so intel
- * lookups carry X-Twzrd-Caller monid-x402/<version>@0.9.5,
+ * 0.9.7 stamps wash GETs when attribution is passed. We wrap fetch so
+ * intel lookups also carry X-Twzrd-Caller monid-x402/<version>@0.9.7,
  * X-TWZRD-Integration monid-x402/<version>, and X-TWZRD-Run-Id.
  *
  * Default on. TWZRD_AUTO_GATE=0 or TWZRD_GATE_ENABLED=false disables.
