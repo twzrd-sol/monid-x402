@@ -14,7 +14,7 @@ inspect (optional, API key)
     → wallet only if allow + --confirm-spend
 ```
 
-This rail is EVM. It is not Solana. The pay path is proven — see “Which rail paid for this” below — using
+This rail is EVM. It is not Solana. The pay path is proven — refuse and paid receipts in `evidence/ledger/`, published copies at `pages/paid-20260915.json` and `pages/refuse-20260915.json` — client is
 `@x402/fetch`, not `x402-solana`.
 
 ## Live offer (captured 2026-09-12, re-probe with `npm run probe:live`)
