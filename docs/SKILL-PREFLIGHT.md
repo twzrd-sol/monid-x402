@@ -23,6 +23,31 @@ use a Monid API key. Typical loop stays:
 If the user is on prepaid `monid run`, this step does not apply. If the user
 is paying per run with USDC, do not skip it.
 
+### Why inspect is not a trust signal
+
+`monid discover` hands an agent `providerName`, `price`, `score`, and
+`tags` (often including `verified`). It does **not** hand `docUrl`. That
+field exists only after `monid inspect`. Measured 2026-09-15 against the
+live API (`tool-audit.selection-blindness.v1`, three queries, 30
+endpoints, `paidRuns: 0`, balance `$20.68` → `$20.68`): `docUrl` is in
+`fieldsOnlyAvailableAfterInspect`. The verified badge is visible at
+selection; the documentation host is not.
+
+A second free preflight (discover + inspect, `$0.00`) on 25 seed queries
+surfaced 409 endpoints across 62 providers, then inspected **one listing
+per provider**. Of those 62: **30** document at a host that does not
+match the brand they assert, **29** of those at a single host
+(`parse.bot`), **3** publish no `docUrl` at all. `verified` is on 58 of
+62 listings (including 26 of the 29 that *do* document on their own
+host), so the tag cannot tell an agent which side it is looking at.
+
+That is a metadata observation, not an accusation — `parse.bot` is named
+openly in each listing's own `docUrl`. We called none of those
+endpoints. The point for this skill: **Health and `verified` break ties
+between endpoints. They do not name `payTo`, and they are not a spend
+decision.** On x402, score the counterparty after inspect and before
+the signer exists.
+
 ### 2b. Preflight (x402 only)
 
 After `monid inspect` and **before** any client constructs a signer:
@@ -111,8 +136,9 @@ monid inspect -p context.dev -e /web/scrape/markdown
 ## Rules for Agents (additions)
 
 13. **Inspect is not preflight.** `Health` and the verified badge break ties
-    between endpoints. They do not authorize a USDC sign. On x402, score
-    `payTo` after inspect and before the signer exists.
+    between endpoints. They do not authorize a USDC sign. `docUrl` is
+    inspect-only (not on discover). On x402, score `payTo` after inspect
+    and before the signer exists.
 14. **Never sign a 402 you have not refused first.** A refuse packet on disk
     is the seat. Confirm-spend without it is a skip, not a pay.
 15. **Empty `accepts[]` is not free.** SIWX retrieve is identity. Unsigned
