@@ -7,6 +7,7 @@
 import { MONID_X402_RUN_URL, RAIL } from "./constants.js";
 import { COUNTERPARTY_SKU, TIERS, counterpartySkuCard } from "./counterparty-sku.js";
 import { scrapePayInput } from "./input.js";
+import { type PrescreenClassifyFn, classifyPrescreenSkip } from "./jev-client.js";
 import { hasRefusePacket } from "./ledger.js";
 import { PayGatedError, payRun, type PayResult } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
@@ -113,13 +114,124 @@ export type QuotedStep = {
   role: PrescreenRole;
   provider: string;
   endpoint: string;
-  class: "x402" | "error";
+  // "not_needed" (not "skipped") to avoid colliding with ProductStepResult.kind's
+  // "skipped", which means something different (a cascade after a prior failure).
+  class: "x402" | "error" | "not_needed";
   amount: string | null;
   usd: number | null;
   network: string | null;
   payTo: string | null;
   reason?: string;
 };
+
+/**
+ * Jev (jev-1.13.0) decides, per target, whether security_headers/
+ * cookie_consent are worth attempting - never whether they're safe. The
+ * baseline this feature must never regress below is "always run all 3
+ * steps": on any classifier failure or uncertainty (no key, timeout, HTTP
+ * error, bad payload, low confidence, or a hallucinated choice), both flags
+ * stay false and the reason says so. Unlike a typical pre-spend gate, "keep"
+ * is the safe default here, not "skip" - skipping a check nobody actually
+ * decided to skip is worse than an occasional wasted $0.0594.
+ */
+export type PrescreenSkipDecision = {
+  skipSecurityHeaders: boolean;
+  skipCookieConsent: boolean;
+  source: "jev" | "default";
+  reasonSecurityHeaders: string;
+  reasonCookieConsent: string;
+};
+
+export const PRESCREEN_SKIP_CONFIDENCE_THRESHOLD = 0.7;
+
+/** Bounds repeat-call cost: quoteVendorPrescreen runs on an unauthenticated
+ * loopback route (POST /v1/product/quote), and every quote now makes one
+ * billed Jev call where it previously made none. A retry loop hitting the
+ * same target repeatedly reuses this instead of re-billing Jev each time.
+ * Deliberately in-memory/per-process, not a correctness mechanism - a
+ * caller varying the URL per request still bypasses it; that residual risk
+ * is a PROXY-lane (auth/rate-limit) decision, out of scope here. */
+const PRESCREEN_SKIP_CACHE_TTL_MS = 5 * 60 * 1000;
+const skipCache = new Map<string, { decision: PrescreenSkipDecision; expiresAt: number }>();
+
+const DEFAULT_SKIP_REASON =
+  "Jev unavailable or inconclusive; keeping all prescreen steps (safe default).";
+
+export async function resolvePrescreenSkips(
+  targetUrl: string,
+  options?: { fetch?: typeof fetch; classify?: PrescreenClassifyFn }
+): Promise<PrescreenSkipDecision> {
+  // Only cache the real classifier path. A caller that injects its own
+  // `classify` (every test, and any future caller wanting per-call control)
+  // is opting out of the shared cache by construction - caching that would
+  // both defeat the injection and leak state across independent calls that
+  // happen to share a target URL.
+  const usingRealClassifier = options?.classify === undefined;
+  if (usingRealClassifier) {
+    const cached = skipCache.get(targetUrl);
+    if (cached && cached.expiresAt > Date.now()) return cached.decision;
+  }
+
+  const decision = await resolvePrescreenSkipsUncached(targetUrl, options);
+  if (usingRealClassifier) {
+    skipCache.set(targetUrl, { decision, expiresAt: Date.now() + PRESCREEN_SKIP_CACHE_TTL_MS });
+  }
+  return decision;
+}
+
+async function resolvePrescreenSkipsUncached(
+  targetUrl: string,
+  options?: { fetch?: typeof fetch; classify?: PrescreenClassifyFn }
+): Promise<PrescreenSkipDecision> {
+  const classify = options?.classify ?? classifyPrescreenSkip;
+  const classification = await classify(targetUrl, { fetch: options?.fetch });
+  if (!classification) {
+    return {
+      skipSecurityHeaders: false,
+      skipCookieConsent: false,
+      source: "default",
+      reasonSecurityHeaders: DEFAULT_SKIP_REASON,
+      reasonCookieConsent: DEFAULT_SKIP_REASON
+    };
+  }
+
+  const decide = (answer: typeof classification.securityHeaders): { skip: boolean; reason: string } => {
+    // An unusable sub-answer (missing, or a hallucinated choice the
+    // anti-hallucination guard in jev-client.ts already nulled out) is the
+    // only case that gets the generic "unavailable" reason - a real "keep"
+    // or a real-but-low-confidence "skip" answer must say so accurately,
+    // since this reason string is user/log-facing (see QuotedStep.reason).
+    if (!answer || answer.choice === null) {
+      return { skip: false, reason: DEFAULT_SKIP_REASON };
+    }
+    if (answer.choice === "skip" && answer.confidence >= PRESCREEN_SKIP_CONFIDENCE_THRESHOLD) {
+      return {
+        skip: true,
+        reason: `Jev (${classification.model}) judged this step unnecessary for this target (confidence ${answer.confidence.toFixed(2)}).`
+      };
+    }
+    if (answer.choice === "skip") {
+      return {
+        skip: false,
+        reason: `Jev (${classification.model}) suggested skipping (confidence ${answer.confidence.toFixed(2)}, below the ${PRESCREEN_SKIP_CONFIDENCE_THRESHOLD} threshold); keeping the step.`
+      };
+    }
+    return {
+      skip: false,
+      reason: `Jev (${classification.model}) judged this step necessary (confidence ${answer.confidence.toFixed(2)}).`
+    };
+  };
+
+  const headers = decide(classification.securityHeaders);
+  const cookies = decide(classification.cookieConsent);
+  return {
+    skipSecurityHeaders: headers.skip,
+    skipCookieConsent: cookies.skip,
+    source: "jev",
+    reasonSecurityHeaders: headers.reason,
+    reasonCookieConsent: cookies.reason
+  };
+}
 
 export type ProductQuote = {
   schema: typeof PRODUCT_SCHEMA;
@@ -204,15 +316,47 @@ export async function quoteVendorPrescreen(
     capMicro?: bigint;
     fetch?: typeof fetch;
     now?: () => string;
+    classify?: PrescreenClassifyFn;
   }
 ): Promise<ProductQuote> {
   const plan = vendorPrescreenPlan(raw);
   const capMicro = options?.capMicro ?? PRODUCT_QUOTE_CAP_MICRO;
   const fetchImpl = options?.fetch ?? globalThis.fetch;
+  // Fired now, awaited lazily below - runs concurrently with the
+  // public_offer probe (which never depends on it) instead of adding Jev's
+  // full round-trip/timeout to every quote's latency unconditionally.
+  const skipPromise = resolvePrescreenSkips(plan.targetUrl, {
+    fetch: fetchImpl,
+    classify: options?.classify
+  });
   const steps: QuotedStep[] = [];
   let totalMicro = 0n;
+  let skip: PrescreenSkipDecision | null = null;
+
+  const skippedStep = (step: PrescreenStep, reason: string): QuotedStep => ({
+    role: step.role,
+    provider: step.target.provider,
+    endpoint: step.target.endpoint,
+    class: "not_needed",
+    amount: null,
+    usd: null,
+    network: null,
+    payTo: null,
+    reason
+  });
 
   for (const step of plan.steps) {
+    if (step.role !== "public_offer" && skip === null) {
+      skip = await skipPromise;
+    }
+    if (step.role === "security_headers" && skip?.skipSecurityHeaders) {
+      steps.push(skippedStep(step, skip.reasonSecurityHeaders));
+      continue;
+    }
+    if (step.role === "cookie_consent" && skip?.skipCookieConsent) {
+      steps.push(skippedStep(step, skip.reasonCookieConsent));
+      continue;
+    }
     try {
       const probe = await probeRun402(step.target, fetchImpl);
       const accepts = probe.paymentRequired.accepts;
@@ -261,7 +405,7 @@ export async function quoteVendorPrescreen(
   }
 
   const oursUsd = usdcFromMicro(totalMicro);
-  const gap = steps.some((row) => row.class !== "x402");
+  const gap = steps.some((row) => row.class === "error");
   const over = totalMicro > capMicro;
   const nextGate = gap ? "catalog_gap" : over ? "over_cap" : "confirm_spend";
   const blocker = gap
@@ -311,7 +455,14 @@ export type ProductPayFn = (input: {
   fetch?: typeof fetch;
 }) => Promise<PayResult>;
 
-export type ProductStepKind = "quoted" | "paid" | "refused" | "failed" | "spend_gated" | "skipped";
+export type ProductStepKind =
+  | "quoted"
+  | "paid"
+  | "refused"
+  | "failed"
+  | "spend_gated"
+  | "skipped"
+  | "not_needed";
 
 export type ProductStepResult = {
   role: PrescreenRole;
@@ -486,7 +637,10 @@ export function deliverVendorPrescreen(input: {
   now?: () => string;
 }): ProductDeliver {
   const paid = input.steps.filter((step) => step.kind === "paid");
-  const delivered = input.quote.steps.length === 3 && paid.length === 3;
+  const notNeeded = input.steps.filter((step) => step.kind === "not_needed");
+  const offerPaid = paid.some((step) => step.role === "public_offer"); // never skippable
+  const delivered =
+    input.quote.steps.length === 3 && paid.length + notNeeded.length === 3 && offerPaid;
   const headerStep = paid.find((step) => step.role === "security_headers");
   const cookieStep = paid.find((step) => step.role === "cookie_consent");
   const offerStep = paid.find((step) => step.role === "public_offer");
@@ -507,19 +661,30 @@ export function deliverVendorPrescreen(input: {
     return { ...step, outputSummary: summary };
   });
 
-  const unpaid = input.steps.filter((step) => step.kind !== "paid").map((step) => step.role);
+  const unpaid = input.steps
+    .filter((step) => step.kind !== "paid" && step.kind !== "not_needed")
+    .map((step) => step.role);
   const limitations = [
     "This replaces first-pass evidence collection before downstream tool spend—not monitoring, remediation, contracts, or human review.",
     "Incumbent $149/200 is the frozen tool-audit snapshot. Not a live Vendorapp fetch.",
     "USDC settles to Monid payTo. TWZRD take-rate is 0."
   ];
+  for (const step of notNeeded) {
+    limitations.push(
+      `NOT_ATTEMPTED (${step.role}): ${step.reason ?? "Jev judged this step unnecessary."} Absence of a paid check is not a clean bill of health.`
+    );
+  }
   if (!delivered) {
     limitations.unshift(
       unpaid.length
         ? `Not delivered. Unpaid steps: ${unpaid.join(", ")}.`
         : "Not delivered. Quote only; no paid step completed."
     );
-  } else {
+  } else if (cookieStep) {
+    // Only claims "partial HTML was analyzed" when a cookie scan actually
+    // ran - asserting this when cookie_consent was Jev-skipped (not_needed)
+    // would contradict the NOT_ATTEMPTED line above with a false claim that
+    // some analysis happened.
     limitations.unshift(COOKIE_UNCERTAINTY_LIMITATION);
   }
 
@@ -562,7 +727,7 @@ function quotedStepResults(
       why: step.why,
       provider: step.target.provider,
       endpoint: step.target.endpoint,
-      kind: quoted?.class === "x402" ? "quoted" : "failed",
+      kind: quoted?.class === "x402" ? "quoted" : quoted?.class === "not_needed" ? "not_needed" : "failed",
       reason: quoted?.reason
     };
   });
@@ -589,7 +754,7 @@ function gateFromHold(steps: ProductStepResult[], quote: ProductQuote): ProductR
   }
   if (steps.some((step) => step.kind === "spend_gated")) return "key";
   if (quote.nextGate !== "confirm_spend") return quote.nextGate;
-  if (steps.every((step) => step.kind === "paid")) return "none";
+  if (steps.every((step) => step.kind === "paid" || step.kind === "not_needed")) return "none";
   return "confirm_spend";
 }
 
@@ -605,13 +770,15 @@ export async function runVendorPrescreen(
     capMicro?: bigint;
     /** Per-seat policy cap. Cookie scan is $0.1782. */
     maxAmountMicro?: bigint;
+    classify?: PrescreenClassifyFn;
   }
 ): Promise<ProductRun> {
   const plan = vendorPrescreenPlan(raw);
   const quote = await quoteVendorPrescreen(raw, {
     fetch: options?.fetch,
     now: options?.now,
-    capMicro: options?.capMicro
+    capMicro: options?.capMicro,
+    classify: options?.classify
   });
   const settlement = settlementFromQuote(quote);
   const capturedAt = options?.now?.() ?? new Date().toISOString();
@@ -681,7 +848,22 @@ export async function runVendorPrescreen(
       }));
   const steps: ProductStepResult[] = [];
   let stop = false;
-  for (const step of plan.steps) {
+  for (const [i, step] of plan.steps.entries()) {
+    const quoted = quote.steps[i];
+    if (quoted?.class === "not_needed") {
+      // A deliberate Jev skip is independent of any prior failure - it is
+      // never a "not paid" cascade, and it must not set stop = true (later
+      // seats are still attempted normally).
+      steps.push({
+        role: step.role,
+        why: step.why,
+        provider: step.target.provider,
+        endpoint: step.target.endpoint,
+        kind: "not_needed",
+        reason: quoted.reason
+      });
+      continue;
+    }
     if (stop) {
       steps.push({
         role: step.role,
