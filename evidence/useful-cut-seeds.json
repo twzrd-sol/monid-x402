@@ -1,0 +1,224 @@
+[
+  {
+    "provider": "x402.browserbase.com",
+    "endpoint": "/fetch",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.99
+  },
+  {
+    "provider": "api.kadec0.xyz",
+    "endpoint": "/v1/scrape",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/screenshot-url",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/url-to-markdown",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/url-to-text",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "context.dev",
+    "endpoint": "/web/scrape/markdown",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "firecrawl",
+    "endpoint": "/scrape",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "mrscraper",
+    "endpoint": "/scrape/markdown",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "octen",
+    "endpoint": "/extract",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "surf",
+    "endpoint": "/web/fetch",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.98
+  },
+  {
+    "provider": "blockrun.ai",
+    "endpoint": "/api/v1/exa/contents",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.97
+  },
+  {
+    "provider": "context.dev",
+    "endpoint": "/web/scrape/html",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.96
+  },
+  {
+    "provider": "context.dev",
+    "endpoint": "/web/screenshot",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.96
+  },
+  {
+    "provider": "mrscraper",
+    "endpoint": "/scrape/html",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.96
+  },
+  {
+    "provider": "exa",
+    "endpoint": "/contents",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.93
+  },
+  {
+    "provider": "mrscraper",
+    "endpoint": "/scrape/extract",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.93
+  },
+  {
+    "provider": "mrscraper",
+    "endpoint": "/scrape/screenshot",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.93
+  },
+  {
+    "provider": "tinyfish",
+    "endpoint": "/fetch",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.93
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/redirect-trace",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.91
+  },
+  {
+    "provider": "context.dev",
+    "endpoint": "/brand/retrieve",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.91
+  },
+  {
+    "provider": "context.dev",
+    "endpoint": "/web/extract",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.91
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/web-extract",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.9
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/v2/cookie-scan",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.89
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/header-security-check",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.88
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/meta-extract",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.87
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/uptime-check",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.87
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/tech-stack-detect",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.84
+  },
+  {
+    "provider": "context.dev",
+    "endpoint": "/web/crawl",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.84
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/company-tech-stack",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.83
+  },
+  {
+    "provider": "context.dev",
+    "endpoint": "/parse",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.83
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/link-extract",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.82
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/v2/company-tech-stack",
+    "jevChoice": "page_evidence",
+    "jevConfidence": 0.81
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/sanctions-check",
+    "jevChoice": "payto_research",
+    "jevConfidence": 0.8
+  },
+  {
+    "provider": "surf",
+    "endpoint": "/wallet/labels/batch",
+    "jevChoice": "payto_research",
+    "jevConfidence": 0.79
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/v2/whois-lookup",
+    "jevChoice": "payto_research",
+    "jevConfidence": 0.75
+  },
+  {
+    "provider": "api.strale.io",
+    "endpoint": "/x402/whois-lookup",
+    "jevChoice": "payto_research",
+    "jevConfidence": 0.74
+  },
+  {
+    "provider": "surf",
+    "endpoint": "/search/wallet",
+    "jevChoice": "payto_research",
+    "jevConfidence": 0.71
+  }
+]
