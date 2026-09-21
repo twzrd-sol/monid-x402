@@ -154,7 +154,8 @@ export function payFailedReceipt(
   resourceUrl: string,
   reason: string,
   code: string,
-  capturedAt = new Date().toISOString()
+  capturedAt = new Date().toISOString(),
+  signerInvocationCount: 0 | 1 = 1
 ): PayFailedReceipt {
   return {
     schema: PAY_FAILED_SCHEMA,
@@ -166,7 +167,7 @@ export function payFailedReceipt(
     decision: "pay_failed",
     reason,
     code,
-    signer_invocation_count: 1,
+    signer_invocation_count: signerInvocationCount,
     usdc_spent: 0,
     capturedAt
   };

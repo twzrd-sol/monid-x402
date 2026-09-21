@@ -1,18 +1,16 @@
 /**
  * TWZRD wash seat on this paying client, after local policy.
  *
- * Published twzrd-x402-gate@0.9.9. This rail is EVM only (Base / Monad).
+ * Published twzrd-x402-gate@0.9.10. This rail is EVM only (Base / Monad).
  * createTwzrdBeforePaymentHook evaluates scored Base payTo values through
- * the package preflight path and also exposes the merchant-card wash seat.
- * wash_flagged=true aborts (twzrd_wash_flagged). A returned 200 card
- * with missing, partial, or stale coverage also aborts in 0.9.9
- * (twzrd_wash_unknown). Scored Base lookup failures fail closed unless the
- * package process explicitly sets TWZRD_FAIL_OPEN=true.
- * We still refuse twzrd_wash_unknown after a package allow so this
- * seat stays honest if the hook fail-opens.
+ * the package preflight path and aborts wash_flagged. It does not refuse
+ * a returned card whose coverage is missing, partial, or stale. That
+ * twzrd_wash_unknown check is this client, after a package allow.
+ * Scored Base lookup failures fail closed unless the package process
+ * explicitly sets TWZRD_FAIL_OPEN=true.
  *
- * 0.9.9 stamps wash GETs when attribution is passed. We wrap fetch so
- * intel lookups also carry X-Twzrd-Caller monid-x402/<version>@0.9.9,
+ * 0.9.10 stamps wash GETs when attribution is passed. We wrap fetch so
+ * intel lookups also carry X-Twzrd-Caller monid-x402/<version>@0.9.10,
  * X-TWZRD-Integration monid-x402/<version>, and X-TWZRD-Run-Id.
  *
  * Default on. TWZRD_AUTO_GATE=0 or TWZRD_GATE_ENABLED=false disables.

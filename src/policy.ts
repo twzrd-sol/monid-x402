@@ -114,28 +114,33 @@ export function evaluatePaymentRequired(
  * Official x402Client.onBeforePaymentCreation adapter.
  * Abort here and the wallet is never asked to sign.
  */
+function selectedAccept(
+  selected: Partial<X402Accept> | undefined
+): X402Accept | null {
+  if (!selected?.network || !selected.amount || !selected.payTo || !selected.asset || !selected.scheme) {
+    return null;
+  }
+  return selected as X402Accept;
+}
+
 export function createBeforePaymentCreationHook(policy: Policy) {
   return async (context: {
     selectedRequirements?: Partial<X402Accept> & { extra?: Record<string, unknown> };
     paymentRequired?: PaymentRequired;
   }): Promise<void | { abort: true; reason: string }> => {
-    if (context.paymentRequired) {
-      const verdict = evaluatePaymentRequired(context.paymentRequired, policy);
-      if (verdict.decision === "refuse") {
-        return { abort: true, reason: `${verdict.code}:${verdict.reason}` };
-      }
-      return;
-    }
-    const selected = context.selectedRequirements;
-    if (!selected?.network || !selected.amount || !selected.payTo || !selected.asset || !selected.scheme) {
+    // The client signs selectedRequirements, not whichever sibling is cheapest.
+    const chosen = selectedAccept(context.selectedRequirements);
+    const required: PaymentRequired | null = chosen
+      ? {
+          x402Version: 2,
+          resource: { url: policy.requireResourceUrl },
+          accepts: [chosen]
+        }
+      : context.paymentRequired ?? null;
+    if (!required) {
       return { abort: true, reason: "missing_selected_requirements" };
     }
-    const synthetic: PaymentRequired = {
-      x402Version: 2,
-      resource: { url: policy.requireResourceUrl },
-      accepts: [selected as X402Accept]
-    };
-    const verdict = evaluatePaymentRequired(synthetic, policy);
+    const verdict = evaluatePaymentRequired(required, policy);
     if (verdict.decision === "refuse") {
       return { abort: true, reason: `${verdict.code}:${verdict.reason}` };
     }

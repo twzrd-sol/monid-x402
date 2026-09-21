@@ -200,9 +200,19 @@ export async function payRun(options: PayOptions): Promise<PayResult> {
         receipt: washRefuseReceipt(target, verdict, aborted[1])
       };
     }
+    // The hook aborts before createPaymentPayload. Signer 1 is only for a
+    // failure after a payload was created.
     return {
       kind: "failed",
-      receipt: payFailedReceipt(target, selected, MONID_X402_RUN_URL, reason, failCode(reason))
+      receipt: payFailedReceipt(
+        target,
+        selected,
+        MONID_X402_RUN_URL,
+        reason,
+        failCode(reason),
+        new Date().toISOString(),
+        aborted?.[1] ? 0 : 1
+      )
     };
   }
 }

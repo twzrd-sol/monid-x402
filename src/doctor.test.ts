@@ -64,7 +64,7 @@ test("doctor passes a healthy listen with refuse on disk and no key", async () =
             rail: "monid-x402",
             listen: "8788",
             prepaid_run: false,
-            twzrd_gate: "0.9.9",
+            twzrd_gate: "0.9.10",
             sku: "vendor-prescreen"
           }),
           { status: 200, headers: { "content-type": "application/json" } }
@@ -138,7 +138,7 @@ test("doctor fails when listen retrieve is still the prepaid 501 list", async ()
             rail: "monid-x402",
             listen: "8788",
             prepaid_run: false,
-            twzrd_gate: "0.9.9",
+            twzrd_gate: "0.9.10",
             sku: "vendor-prescreen"
           }),
           { status: 200 }

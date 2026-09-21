@@ -79,3 +79,33 @@ test("onBeforePaymentCreation aborts over cap without a wallet", async () => {
   assert.ok(result && "abort" in result && result.abort);
   assert.match(result.reason, /over_cap/);
 });
+
+test("hook aborts the accept about to be signed when a sibling is under the cap", async () => {
+  const live = required.accepts[0];
+  if (!live) throw new Error("fixture missing accept");
+  const expensive = { ...live, amount: "178200" };
+  const hook = createBeforePaymentCreationHook(defaultPolicy());
+  const result = await hook({
+    paymentRequired: { ...required, accepts: [expensive, live] },
+    selectedRequirements: expensive
+  });
+  assert.ok(result && "abort" in result && result.abort);
+  assert.match(result.reason, /over_cap/);
+});
+
+test("hook aborts a foreign payTo even when a pinned sibling is cheap", async () => {
+  const live = required.accepts[0];
+  if (!live) throw new Error("fixture missing accept");
+  const foreign = {
+    ...live,
+    amount: "1",
+    payTo: "0x0000000000000000000000000000000000000001"
+  };
+  const hook = createBeforePaymentCreationHook(defaultPolicy());
+  const result = await hook({
+    paymentRequired: { ...required, accepts: [foreign, live] },
+    selectedRequirements: foreign
+  });
+  assert.ok(result && "abort" in result && result.abort);
+  assert.match(result.reason, /no_acceptable_offer/);
+});

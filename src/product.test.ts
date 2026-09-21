@@ -93,6 +93,32 @@ test("vendor-prescreen is the tool-audit three-call job on x402, not a catalog d
   assert.deepEqual(plan.steps[0]?.target.input, { queryParams: { url: "https://monid.ai/" } });
 });
 
+test("quote ignores a cheaper foreign accept", async () => {
+  const live = fixture.paymentRequired.accepts[0];
+  if (!live) throw new Error("fixture missing accept");
+  const fetchImpl: typeof fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { endpoint?: string };
+    const amount = body.endpoint === "/web/scrape/markdown" ? "10000" : "59400";
+    return new Response("{}", {
+      status: 402,
+      headers: {
+        "PAYMENT-REQUIRED": Buffer.from(JSON.stringify({
+          ...fixture.paymentRequired,
+          accepts: [
+            { ...live, amount: "1", payTo: "0x0000000000000000000000000000000000000001" },
+            { ...live, amount }
+          ]
+        })).toString("base64")
+      }
+    });
+  };
+  const quote = await quoteVendorPrescreen("https://monid.ai", { fetch: fetchImpl });
+  const priced = quote.steps.filter((step) => step.class === "x402");
+  assert.equal(priced.length, 3);
+  assert.ok(priced.every((step) => step.payTo === MONID_X402_PAY_TO));
+  assert.equal(quote.quote.totalMicro, "128800");
+});
+
 test("quote sums live 402 seats and never claims pay", async () => {
   const quote = await quoteVendorPrescreen("https://monid.ai", {
     fetch: quoteFetch({

@@ -10,7 +10,7 @@ import { scrapePayInput } from "./input.js";
 import { hasRefusePacket } from "./ledger.js";
 import { PayGatedError, payRun, type PayResult } from "./pay.js";
 import { amountMicro, usdcFromMicro } from "./payment-required.js";
-import { defaultPolicy } from "./policy.js";
+import { defaultPolicy, evaluatePaymentRequired } from "./policy.js";
 import { probeRun402 } from "./probe.js";
 import { spendGatedReceipt } from "./receipt.js";
 import type {
@@ -230,9 +230,26 @@ export async function quoteVendorPrescreen(
         });
         continue;
       }
-      const selected = accepts.reduce((best, next) =>
-        amountMicro(next) < amountMicro(best) ? next : best
-      );
+      // Eligibility (payTo, network, asset, scheme) is the quote filter.
+      // The SKU cap applies to the sum below, not to this selection.
+      const verdict = evaluatePaymentRequired(probe.paymentRequired, defaultPolicy({
+        maxAmountMicro: 10n ** 18n
+      }));
+      if (verdict.decision !== "allow" || !verdict.selected) {
+        steps.push({
+          role: step.role,
+          provider: step.target.provider,
+          endpoint: step.target.endpoint,
+          class: "error",
+          amount: null,
+          usd: null,
+          network: null,
+          payTo: null,
+          reason: verdict.reason
+        });
+        continue;
+      }
+      const selected = verdict.selected;
       const micro = amountMicro(selected);
       totalMicro += micro;
       steps.push({

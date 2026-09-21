@@ -54,19 +54,19 @@ npm run quote:live
 Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
 `@x402/fetch` + `ExactEvmScheme`. Local policy still runs on the 402
 *before* the signer is constructed, and again first on
-`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.9`
+`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.10`
 evaluates Base through the full preflight path and enforces the seller's
 recommended cap before signing. The adapter also checks merchant-card wash
 coverage before the signer exists.
 
 On this pin: `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200
-card with missing, partial, or stale coverage also aborts
-(`twzrd_wash_unknown`) — 0.9.9 refuses that on a returned card; this
-client still refuses after a package allow. On scored Base, fast lookup
-failures (503, network, invalid JSON) fail closed by default; set the
-package's `TWZRD_FAIL_OPEN=true` only when that availability tradeoff is
-intentional. Lookups we send carry
-`X-Twzrd-Caller: monid-x402/<version>@0.9.9` and
+card with missing, partial, or stale coverage aborts
+(`twzrd_wash_unknown`) in this client after the package hook allows.
+`createTwzrdBeforePaymentHook` in 0.9.10 does not apply that coverage
+check. On scored Base, fast lookup failures (503, network, invalid JSON)
+fail closed by default; set the package's `TWZRD_FAIL_OPEN=true` only
+when that availability tradeoff is intentional. Lookups we send carry
+`X-Twzrd-Caller: monid-x402/<version>@0.9.10` and
 `X-TWZRD-Integration: monid-x402/<version>`. This rail is EVM and does
 not register Solana.
 
@@ -106,8 +106,11 @@ export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
 `GET /health` reports the bound port, `prepaid_run: false`, and
-`twzrd_gate: "0.9.9"`. `GET /` is the operate desk. Confirm on listen
-is still 403 — no proxy wallet. Pay is CLI `pay --confirm-spend` only.
+`twzrd_gate: "0.9.10"`. `GET /` is the operate desk. Spend confirm on
+listen is still 403. There is no USDC wallet on that door. `GET /v1/runs/:id`
+can sign SIWX when `MONID_LISTEN_PRIVATE_KEY` is set and
+`X-TWZRD-Confirm-Sign` (or confirm-spend) is sent. That signature is
+identity, not a USDC debit. Pay is CLI `pay --confirm-spend` only.
 `POST $MONID_API_BASE_URL/v1/run` probes `x402.monid.ai` and returns a refuse
 or `spend_gated` packet. It never calls prepaid `api.monid.ai/v1/run`.
 Fleet workers live in `fleet/` and POST only that URL. Discover/inspect
@@ -149,7 +152,8 @@ node dist/cli.js pay --confirm-spend --max-amount-micro 10000 --url https://exam
 
 Retrieve is week 3. `GET /v1/runs/:id` 402s with empty `accepts[]` and SIWX.
 That is not a USDC offer. `retrieve` writes a refuse packet. Do not pass
-`--confirm-spend`. Listen `GET /v1/runs/:id` is the same hold.
+`--confirm-spend`. Listen `GET /v1/runs/:id` stays a 402 with no USDC
+debit unless that SIWX path is explicitly armed.
 
 Week 4 E2E: `npm run e2e:listen` walks health → refuse → spend_gated →
 confirm-still-gated → SIWX retrieve refuse → list 501 on 8788. Signer 0.

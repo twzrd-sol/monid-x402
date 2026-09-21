@@ -8,7 +8,7 @@ This is not a Solana pin. This is not listing TWZRD as a Monid provider.
 ## The 1
 
 Every Monid execution that can 402, does 402, and nothing signs until local
-policy says so. After local allow, `twzrd-x402-gate@0.9.9` evaluates Base
+policy says so. After local allow, `twzrd-x402-gate@0.9.10` evaluates Base
 and enforces the seller cap before any signer exists (see README). Week-0
 listen still does not sign.
 
@@ -105,12 +105,11 @@ USDC offer. Policy refuses `siwx_no_pay_offer`. Signer stays 0.
 3. Listen `GET /v1/runs/:id` probes the x402 host and returns that refuse.
    `GET /v1/runs` list stays 501 (prepaid list).
 4. VERIFY writes `evidence/verify/week3.json`. Same-session grade only.
-5. Pin `twzrd-x402-gate@0.9.9` on the paying client only. A 200
+5. Pin `twzrd-x402-gate@0.9.10` on the paying client only. A 200
    merchant_card with missing/partial/stale coverage is
-   `twzrd_wash_unknown` (0.9.9 refuses that on a returned card; this
-   client still refuses after a package allow).
+   `twzrd_wash_unknown` (this client refuses that after a 0.9.10 package allow; the package hook does not).
 6. Listen stays no-wallet. `GET /` desk is operate, not a proxy wallet.
-7. `GET /health` names `twzrd_gate: "0.9.9"` and the bound port.
+7. `GET /health` names `twzrd_gate: "0.9.10"` and the bound port.
 
 Do not sign SIWX. Confirm-spend does not unlock retrieve.
 
@@ -160,7 +159,7 @@ The SKU shipped on main. The live 8788 process can still be a week-5
 binary that 404s `GET /v1/product` and omits `twzrd_gate` on `/health`.
 That is a stale door, not a missing product.
 
-1. `GET /health` names `twzrd_gate: "0.9.9"` and `sku: "vendor-prescreen"`.
+1. `GET /health` names `twzrd_gate: "0.9.10"` and `sku: "vendor-prescreen"`.
 2. `GET /v1/product` lists the catalog. `canPay` stays false.
 3. `POST /v1/product/confirm` stays 403 `spend_gated`. Signer 0. No quote
    probe in e2e (quote would hit live x402).

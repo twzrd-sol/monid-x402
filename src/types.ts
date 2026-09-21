@@ -136,7 +136,7 @@ export type PayFailedReceipt = {
   decision: "pay_failed";
   reason: string;
   code: string;
-  signer_invocation_count: 1;
+  signer_invocation_count: 0 | 1;
   usdc_spent: 0;
   capturedAt: string;
 };

@@ -229,7 +229,7 @@ function card(body: unknown, status = 200): Response {
 }
 
 function merchantCardUrl(payTo: string): string {
-  return `${INTEL}/v1/intel/merchant_card/${encodeURIComponent(payTo)}`;
+  return `${INTEL}/v1/intel/merchant_card/${encodeURIComponent(payTo)}?full=true`;
 }
 
 function headerOf(call: FetchCall, name: string): string | null {

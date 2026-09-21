@@ -1,7 +1,7 @@
 {
   "name": "monid-x402",
   "version": "0.1.0",
-  "description": "Pre-sign spend gate for Monid's live x402 run host. inspect \u2192 policy \u2192 402 \u2192 refuse or pay.",
+  "description": "Pre-sign spend gate for Monid's live x402 run host. inspect → policy → 402 → refuse or pay.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -48,7 +48,7 @@
     "@x402/evm": "^2.25.0",
     "@x402/extensions": "^2.25.0",
     "@x402/fetch": "^2.25.0",
-    "twzrd-x402-gate": "0.9.9",
+    "twzrd-x402-gate": "0.9.10",
     "viem": "^2.56.3"
   }
 }

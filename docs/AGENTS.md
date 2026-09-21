@@ -11,7 +11,7 @@ that did not write `src/` actually graded.
 ## Listen (week 1-2 door)
 
 Default Path proxy is loopback **8788**. `GET /health` reports the bound
-port, `prepaid_run: false`, and `twzrd_gate: "0.9.9"`. `GET /` is the
+port, `prepaid_run: false`, and `twzrd_gate: "0.9.10"`. `GET /` is the
 operate desk. `GET /prescreen` is the vendor-prescreen SKU. Buyer
 contract: `GET /v1/product` then `POST /v1/product/run`. Confirm on
 listen stays 403. CLI pay is `product --confirm-spend` after a refuse
@@ -58,7 +58,7 @@ while the listen is running.
 ## E2E (week 4)
 
 Write: `src/e2e.ts`. Job: one walk of the 8788 door. `npm run e2e:listen`
-writes `evidence/verify/week4.json`. Doctor and fleet must cover retrieve,
+writes `evidence/verify/week6.json`. Doctor and fleet must cover retrieve,
 not only POST /v1/run. No spend. Leave 8787 alone.
 
 ## RETRIEVE (week 3)
