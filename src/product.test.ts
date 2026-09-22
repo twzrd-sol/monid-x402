@@ -331,6 +331,11 @@ test("run with a Jev skip pays only the needed seats and still delivers", async 
   assert.notEqual(run.nextGate, "none");
   assert.equal(run.usdc_spent, 0.0694);
   assert.deepEqual(run.deliver.findings.cookiePotentialIssues, [NOT_ATTEMPTED]);
+  assert.equal(
+    run.deliver.limitations.includes("Not delivered. Quote only; no paid step completed."),
+    false
+  );
+  assert.match(run.deliver.limitations[0] ?? "", /Not attempted: cookie_consent/);
   assert.ok(
     run.deliver.limitations.some((line) => /NOT_ATTEMPTED \(cookie_consent\)/.test(line)),
     "must record that the skipped check was not attempted, not silently imply a clean bill of health"
@@ -389,6 +394,11 @@ test("run with a skipped header seat is not a finished paid delivery", async () 
   assert.notEqual(run.nextGate, "none");
   assert.deepEqual(run.deliver.findings.missingSecurityHeaders, [NOT_ATTEMPTED]);
   assert.deepEqual(run.deliver.findings.headerPotentialIssues, [NOT_ATTEMPTED]);
+  assert.equal(
+    run.deliver.limitations.includes("Not delivered. Quote only; no paid step completed."),
+    false
+  );
+  assert.match(run.deliver.limitations[0] ?? "", /Not attempted: security_headers/);
 });
 
 test("classify returning null keeps all three steps (safe default, never silently skips)", async () => {
@@ -487,6 +497,15 @@ test("quote stops billed classifier calls once the ceiling is hit", async () => 
     const again = billed;
     await quoteVendorPrescreen("https://ceiling.example/one-more-distinct-url", { fetch: fetchImpl });
     assert.equal(billed, again);
+    billed = 0;
+    resetPrescreenClassifierBudgetForTests();
+    await Promise.all(
+      Array.from({ length: PRESCREEN_CLASSIFIER_CALL_CEILING + 3 }, (_, i) =>
+        quoteVendorPrescreen(`https://ceiling-parallel.example/item-${i}`, { fetch: fetchImpl })
+      )
+    );
+    assert.ok(billed <= PRESCREEN_CLASSIFIER_CALL_CEILING);
+    assert.equal(billed, PRESCREEN_CLASSIFIER_CALL_CEILING);
   } finally {
     if (originalKey === undefined) delete process.env.TYPESAFE_API_KEY;
     else process.env.TYPESAFE_API_KEY = originalKey;

@@ -179,11 +179,11 @@ export async function resolvePrescreenSkips(
     if (billedClassifierCalls >= PRESCREEN_CLASSIFIER_CALL_CEILING) {
       return keepAllPrescreenSteps();
     }
+    billedClassifierCalls += 1;
   }
 
   const decision = await resolvePrescreenSkipsUncached(targetUrl, options);
   if (usingRealClassifier) {
-    billedClassifierCalls += 1;
     skipCache.set(targetUrl, { decision, expiresAt: Date.now() + PRESCREEN_SKIP_CACHE_TTL_MS });
   }
   return decision;
@@ -694,10 +694,13 @@ export function deliverVendorPrescreen(input: {
     );
   }
   if (!delivered) {
+    const notAttempted = notNeeded.map((step) => step.role);
     limitations.unshift(
       unpaid.length
         ? `Not delivered. Unpaid steps: ${unpaid.join(", ")}.`
-        : "Not delivered. Quote only; no paid step completed."
+        : notAttempted.length
+          ? `Not delivered. Not attempted: ${notAttempted.join(", ")}.`
+          : "Not delivered. Quote only; no paid step completed."
     );
   } else if (cookieStep) {
     // Only claims "partial HTML was analyzed" when a cookie scan actually
