@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Give your agent a small research budget</title>
+  <style>
+    body { margin: 0; font: 18px/1.45 Georgia, serif; color: #1c1915; background: #f6f1e8; }
+    main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    h1 { font-size: 1.7rem; line-height: 1.25; }
+    .promise { font-size: 1.15rem; }
+    .beat { background: #fff; border: 1px solid #d9d0c3; padding: 0.8rem 1rem; margin: 0.6rem 0; }
+    .quiet { color: #3f5c4b; }
+    details { background: #fff; border: 1px solid #d9d0c3; padding: 0.6rem 1rem; }
+    #edge[hidden] { display: none; }
+    pre { overflow: auto; background: #241f1a; color: #f6f1e8; padding: 1rem; font-size: 0.85rem; }
+    button { font: inherit; padding: 0.4rem 0.8rem; }
+    footer { margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <p>Your agent asks permission to spend half a cent, even though you already told it to check.</p>
+    <h1>Give your agent a small research budget once.</h1>
+    <p class="promise">It checks the web, pays when needed, stays within the limit, and comes back with the answer. You see what it found, what it spent, and what was actually delivered.</p>
+
+    <h2>One task</h2>
+    <p id="task">Check whether this item is still $40 and in stock. Spend up to five cents. Don’t buy it.</p>
+    <ol>
+      <li class="beat" id="recorded">The agent receives the instruction and records the limit: <span id="limit">$0.05</span>. Do not buy.</li>
+      <li class="beat quiet" id="paid-beat">It meets a paid page and pays <span id="spent">$0.02</span> without interrupting the user. No approval request.</li>
+      <li class="beat">It returns: <strong id="answer">Listed at $40 and in stock at 2:14 p.m.</strong></li>
+    </ol>
+    <details id="receipt">
+      <summary>Receipt</summary>
+      <p>Source <span id="receipt-source">https://shop.example/item/shelf</span></p>
+      <p>Payment <span id="receipt-payment">$0.02</span></p>
+      <p>Timestamp <span id="receipt-time">2:14 p.m.</span></p>
+      <p>Content hash <span id="receipt-hash"></span></p>
+    </details>
+
+    <h2>When the sources do not agree</h2>
+    <p>The same mandate, a stale listing, and a live listing that disagrees. The agent stops inside five cents and does not buy.</p>
+    <button type="button" id="show-stop">Show the stop</button>
+    <div id="edge" hidden>
+      <p id="edge-gap">Could not establish whether it is still $40 and in stock. One listing was stale and another disagreed on price and stock. Stopped inside the five-cent limit. Nothing was bought.</p>
+      <p>Spent <span id="edge-spent">$0.04</span>. Still inside the limit. Nothing was bought.</p>
+    </div>
+
+    <h2>Copy one task</h2>
+    <pre><code>const mandate = recordMandate(
+  "Check whether this item is still $40 and in stock. Spend up to five cents. Don’t buy it.",
+  0.05
+);
+const result = runMandate(mandate, pages);
+// result.approvalRequired === false
+// result.purchased === false
+// result.receipt.contentHash === contentHash(deliveredBytes)</code></pre>
+
+    <h2>Who this is for</h2>
+    <p>Builders of research, shopping, and monitoring agents. That includes MCP tool authors, research-agent developers, browser-agent builders, and teams assembling shopping or monitoring workflows.</p>
+    <p>Bring one agent task that still hands a small decision back to the user.</p>
+
+    <h2>A note from the work</h2>
+    <blockquote>
+      <p>We keep teaching agents to ask permission at exactly the moment they should finish.</p>
+      <p>If I tell an agent, “Check this and spend up to five cents,” I have already made the decision. Asking again is not safety. It is forgotten context.</p>
+      <p>We’re building the missing layer: bounded permission, machine payment, and evidence of what came back. The user gets an answer instead of another approval request.</p>
+      <p>Looking for developers with one real workflow where their agent still asks them to supervise the last step.</p>
+    </blockquote>
+    <footer>
+      <p>The meaningful signal is whether a developer gives the agent a second task after the first one completes. Impressions are not that signal.</p>
+    </footer>
+  </main>
+  <script src="mandate.js"></script>
+</body>
+</html>
