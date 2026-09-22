@@ -144,15 +144,21 @@ export type PrescreenSkipDecision = {
 
 export const PRESCREEN_SKIP_CONFIDENCE_THRESHOLD = 0.7;
 
-/** Bounds repeat-call cost: quoteVendorPrescreen runs on an unauthenticated
- * loopback route (POST /v1/product/quote), and every quote now makes one
- * billed Jev call where it previously made none. A retry loop hitting the
- * same target repeatedly reuses this instead of re-billing Jev each time.
- * Deliberately in-memory/per-process, not a correctness mechanism - a
- * caller varying the URL per request still bypasses it; that residual risk
- * is a PROXY-lane (auth/rate-limit) decision, out of scope here. */
+/** Visible in findings when a seat was not scanned. Empty arrays are a real scan that found nothing. */
+export const NOT_ATTEMPTED = "NOT_ATTEMPTED";
+
+/** Hard stop on outbound classifier calls for this process. Cache hits do not count. Past the ceiling, seats stay in the plan and nothing is billed. */
+export const PRESCREEN_CLASSIFIER_CALL_CEILING = 8;
+
 const PRESCREEN_SKIP_CACHE_TTL_MS = 5 * 60 * 1000;
 const skipCache = new Map<string, { decision: PrescreenSkipDecision; expiresAt: number }>();
+let billedClassifierCalls = 0;
+
+/** Test isolation only. Production callers never reset the ceiling. */
+export function resetPrescreenClassifierBudgetForTests(): void {
+  billedClassifierCalls = 0;
+  skipCache.clear();
+}
 
 const DEFAULT_SKIP_REASON =
   "Jev unavailable or inconclusive; keeping all prescreen steps (safe default).";
@@ -170,13 +176,27 @@ export async function resolvePrescreenSkips(
   if (usingRealClassifier) {
     const cached = skipCache.get(targetUrl);
     if (cached && cached.expiresAt > Date.now()) return cached.decision;
+    if (billedClassifierCalls >= PRESCREEN_CLASSIFIER_CALL_CEILING) {
+      return keepAllPrescreenSteps();
+    }
   }
 
   const decision = await resolvePrescreenSkipsUncached(targetUrl, options);
   if (usingRealClassifier) {
+    billedClassifierCalls += 1;
     skipCache.set(targetUrl, { decision, expiresAt: Date.now() + PRESCREEN_SKIP_CACHE_TTL_MS });
   }
   return decision;
+}
+
+function keepAllPrescreenSteps(): PrescreenSkipDecision {
+  return {
+    skipSecurityHeaders: false,
+    skipCookieConsent: false,
+    source: "default",
+    reasonSecurityHeaders: DEFAULT_SKIP_REASON,
+    reasonCookieConsent: DEFAULT_SKIP_REASON
+  };
 }
 
 async function resolvePrescreenSkipsUncached(
@@ -186,13 +206,7 @@ async function resolvePrescreenSkipsUncached(
   const classify = options?.classify ?? classifyPrescreenSkip;
   const classification = await classify(targetUrl, { fetch: options?.fetch });
   if (!classification) {
-    return {
-      skipSecurityHeaders: false,
-      skipCookieConsent: false,
-      source: "default",
-      reasonSecurityHeaders: DEFAULT_SKIP_REASON,
-      reasonCookieConsent: DEFAULT_SKIP_REASON
-    };
+    return keepAllPrescreenSteps();
   }
 
   const decide = (answer: typeof classification.securityHeaders): { skip: boolean; reason: string } => {
@@ -638,11 +652,16 @@ export function deliverVendorPrescreen(input: {
 }): ProductDeliver {
   const paid = input.steps.filter((step) => step.kind === "paid");
   const notNeeded = input.steps.filter((step) => step.kind === "not_needed");
-  const offerPaid = paid.some((step) => step.role === "public_offer"); // never skippable
+  const offerPaid = paid.some((step) => step.role === "public_offer");
   const delivered =
-    input.quote.steps.length === 3 && paid.length + notNeeded.length === 3 && offerPaid;
-  const headerStep = paid.find((step) => step.role === "security_headers");
-  const cookieStep = paid.find((step) => step.role === "cookie_consent");
+    notNeeded.length === 0 &&
+    input.quote.steps.length === 3 &&
+    paid.length === 3 &&
+    offerPaid;
+  const headerSkipped = notNeeded.some((step) => step.role === "security_headers");
+  const cookieSkipped = notNeeded.some((step) => step.role === "cookie_consent");
+  const headerStep = headerSkipped ? undefined : paid.find((step) => step.role === "security_headers");
+  const cookieStep = cookieSkipped ? undefined : paid.find((step) => step.role === "cookie_consent");
   const offerStep = paid.find((step) => step.role === "public_offer");
   const headers = headerStep ? summarizeHeaders(headerStep.outputSummary ?? headerStep) : null;
   const cookies = cookieStep ? summarizeCookies(cookieStep.outputSummary ?? cookieStep) : null;
@@ -702,9 +721,9 @@ export function deliverVendorPrescreen(input: {
     verdict: delivered ? "review_required" : "incomplete",
     findings: {
       publicOffer,
-      missingSecurityHeaders: headers?.missing ?? [],
-      headerPotentialIssues: headers?.issues ?? [],
-      cookiePotentialIssues: cookies?.issues ?? []
+      missingSecurityHeaders: headerSkipped ? [NOT_ATTEMPTED] : headers?.missing ?? [],
+      headerPotentialIssues: headerSkipped ? [NOT_ATTEMPTED] : headers?.issues ?? [],
+      cookiePotentialIssues: cookieSkipped ? [NOT_ATTEMPTED] : cookies?.issues ?? []
     },
     steps,
     limitations,
@@ -754,7 +773,8 @@ function gateFromHold(steps: ProductStepResult[], quote: ProductQuote): ProductR
   }
   if (steps.some((step) => step.kind === "spend_gated")) return "key";
   if (quote.nextGate !== "confirm_spend") return quote.nextGate;
-  if (steps.every((step) => step.kind === "paid" || step.kind === "not_needed")) return "none";
+  if (steps.some((step) => step.kind === "not_needed")) return "confirm_spend";
+  if (steps.every((step) => step.kind === "paid")) return "none";
   return "confirm_spend";
 }
 

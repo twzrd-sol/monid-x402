@@ -110,7 +110,7 @@ export type PrescreenClassifyFn = (
  */
 export const classifyPrescreenSkip: PrescreenClassifyFn = async (targetUrl, options) => {
   const env = options?.env ?? process.env;
-  const apiKey = env.TYPESAFE_API_KEY?.trim();
+  const apiKey = env.TYPESAFE_API_KEY?.trim() || env.JEV?.trim();
   if (!apiKey) return null;
 
   const fetchImpl = options?.fetch ?? globalThis.fetch;

@@ -139,3 +139,37 @@ test("classifyPrescreenSkip returns null on timeout", async () => {
   });
   assert.equal(result, null);
 });
+
+test("classifyPrescreenSkip uses JEV when TYPESAFE_API_KEY is absent", async () => {
+  let calls = 0;
+  const result = await classifyPrescreenSkip("https://api.example.com/v1/prices", {
+    env: { JEV: "stand-in-jev-key" },
+    fetch: async (input, init) => {
+      calls += 1;
+      const headers = new Headers((init as RequestInit | undefined)?.headers);
+      assert.equal(headers.get("authorization"), "Bearer stand-in-jev-key");
+      return jevFetch({
+        model: "jev-1.13.0",
+        answers: {
+          security_headers: { choice: "keep", confidence: 0.9 },
+          cookie_consent: { choice: "keep", confidence: 0.9 }
+        }
+      })(input, init);
+    }
+  });
+  assert.equal(calls, 1);
+  assert.equal(result?.securityHeaders?.choice, "keep");
+});
+
+test("classifyPrescreenSkip does not call out when JEV and TYPESAFE_API_KEY are both absent", async () => {
+  let calls = 0;
+  const result = await classifyPrescreenSkip("https://api.example.com/v1/prices", {
+    env: {},
+    fetch: async () => {
+      calls += 1;
+      throw new Error("must not call out");
+    }
+  });
+  assert.equal(calls, 0);
+  assert.equal(result, null);
+});
