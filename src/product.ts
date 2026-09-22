@@ -809,10 +809,15 @@ export async function runVendorPrescreen(
   ): ProductRun => {
     const totals = runTotals(steps);
     const deliver = deliverVendorPrescreen({ quote, steps, now: options?.now });
-    const decision =
+    const unattempted = steps.some((step) => step.kind === "not_needed");
+    let decision =
       extra.decision ??
       (deliver.delivered ? "paid" : options?.confirmSpend ? "incomplete" : "quoted");
-    const nextGate = extra.nextGate ?? gateFromHold(steps, quote);
+    let nextGate = extra.nextGate ?? gateFromHold(steps, quote);
+    if (unattempted) {
+      if (decision === "paid") decision = "incomplete";
+      if (nextGate === "none") nextGate = "confirm_spend";
+    }
     return {
       schema: PRODUCT_RUN_SCHEMA,
       sku: PRODUCT_SKU,

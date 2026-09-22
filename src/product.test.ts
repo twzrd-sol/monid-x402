@@ -337,6 +337,60 @@ test("run with a Jev skip pays only the needed seats and still delivers", async 
   );
 });
 
+test("run with a skipped header seat is not a finished paid delivery", async () => {
+  const dir = tempDir("monid-product-jev-skip-header-");
+  for (const role of ["public_offer", "cookie_consent"]) {
+    const step = vendorPrescreenPlan("https://shop.example/item").steps.find((s) => s.role === role);
+    if (!step) throw new Error(`missing ${role} seat`);
+    writeFileSync(
+      join(dir, `${role}.json`),
+      `${JSON.stringify({
+        decision: "refuse",
+        code: "over_cap",
+        provider: step.target.provider,
+        endpoint: step.target.endpoint
+      })}\n`
+    );
+  }
+  const run = await runVendorPrescreen("https://shop.example/item", {
+    confirmSpend: true,
+    requireRefuseDir: dir,
+    privateKey: `0x${"22".repeat(32)}`,
+    fetch: quoteFetch({
+      "/web/scrape/markdown": "10000",
+      "/x402/v2/cookie-scan": "178200"
+    }),
+    classify: async () => ({
+      model: "jev-1.13.0",
+      securityHeaders: { choice: "skip", confidence: 0.91 },
+      cookieConsent: { choice: "keep", confidence: 0.9 }
+    }),
+    pay: async ({ target }) => ({
+      kind: "paid",
+      receipt: paidReceipt(
+        target,
+        {
+          scheme: "exact",
+          network: "eip155:8453",
+          amount: target.endpoint === "/web/scrape/markdown" ? "10000" : "178200",
+          asset: USDC_BASE,
+          payTo: MONID_X402_PAY_TO
+        },
+        "https://x402.monid.ai/v1/run",
+        200,
+        "eyJ9"
+      ),
+      body: { title: "ok" }
+    })
+  });
+  assert.equal(run.steps[1]?.kind, "not_needed");
+  assert.equal(run.deliver.delivered, false);
+  assert.notEqual(run.decision, "paid");
+  assert.notEqual(run.nextGate, "none");
+  assert.deepEqual(run.deliver.findings.missingSecurityHeaders, [NOT_ATTEMPTED]);
+  assert.deepEqual(run.deliver.findings.headerPotentialIssues, [NOT_ATTEMPTED]);
+});
+
 test("classify returning null keeps all three steps (safe default, never silently skips)", async () => {
   const quote = await quoteVendorPrescreen("https://api.example.com/v1/prices", {
     fetch: quoteFetch({
