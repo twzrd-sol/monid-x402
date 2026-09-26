@@ -1,7 +1,7 @@
 # Sprint outcome B: pay did not run
 
 Date: 2026-09-12. Branch: `cursor/monid-week0-sprint`.
-Listen: `127.0.0.1:8788` pid 3836528 on `/home/twzrd/monid-x402` `a05ce97`.
+Listen: `127.0.0.1:8788` on the `monid-x402` checkout at `a05ce97`.
 8787 left alone.
 
 ## What moved
