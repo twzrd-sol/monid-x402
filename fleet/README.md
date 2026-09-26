@@ -45,4 +45,4 @@ not bind 8787 or 8788.
 - No payment header on the default job
 - Worker source does not name a prepaid run URL
 - Worker does not import `src/`
-- Leave pid 915170 / `:8787` alone
+- Leave the stale `:8787` listener alone

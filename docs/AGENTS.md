@@ -1,6 +1,6 @@
 # Lane contract
 
-Work in a `monid-x402` worktree. Do not edit `/home/twzrd/tool-audit`.
+Work in a `monid-x402` worktree. Do not edit the `tool-audit` checkout.
 Do not edit wzrd-final serve trees. Do not invent or commit a key.
 Spend only with `--confirm-spend` after a refuse packet is on disk.
 
@@ -28,7 +28,7 @@ npm run decision:listen
 402 `over_cap` signer 0. It never sends a wallet or `--confirm-spend`.
 See [`docs/LISTEN-DECISION.md`](LISTEN-DECISION.md).
 
-`127.0.0.1:8787` is a stale `node dist/server.js` (pid 915170, cwd deleted)
+`127.0.0.1:8787` is a stale `node dist/server.js` (cwd deleted)
 that 302s `/` to the tool-audit GitHub Pages film. Leave it alone. Do not
 point `MONID_API_BASE_URL` at 8787.
 
