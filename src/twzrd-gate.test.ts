@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { createRequire } from "node:module";
 import { x402Client } from "@x402/fetch";
+import { createTwzrdBeforePaymentHook } from "twzrd-x402-gate";
 import {
   MONID_X402_PAY_TO,
   NETWORK_BASE,
@@ -283,7 +284,12 @@ async function gatedClient(
   return { client, signerCalls: () => signerCalls };
 }
 
-function pay(client: x402Client, network: `${string}:${string}`, payTo: string) {
+function pay(
+  client: x402Client,
+  network: `${string}:${string}`,
+  payTo: string,
+  override: { amount?: string; asset?: string } = {}
+) {
   return client.createPaymentPayload({
     x402Version: 2,
     resource: { url: "https://x402.monid.ai/v1/run" },
@@ -291,8 +297,8 @@ function pay(client: x402Client, network: `${string}:${string}`, payTo: string) 
       {
         scheme: "exact",
         network,
-        amount: "10000",
-        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        amount: override.amount ?? "10000",
+        asset: override.asset ?? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
         payTo,
         maxTimeoutSeconds: 60,
         extra: {}
@@ -300,6 +306,66 @@ function pay(client: x402Client, network: `${string}:${string}`, payTo: string) 
     ]
   });
 }
+
+/**
+ * 0.11.1/0.11.2 package refusals that fire before any intel call
+ * (twzrd_non_usdc_asset, amount_malformed). In this client local policy runs
+ * first and refuses the same inputs with its own reasons (asset allowlist,
+ * integer amount), so the package codes are a second layer here. Both layers
+ * are measured: the composed path shows local policy deciding with zero intel
+ * calls; the package hook called directly shows the 0.11.4 code.
+ */
+const BASE_REQ = {
+  scheme: "exact",
+  network: NETWORK_BASE,
+  amount: "10000",
+  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  payTo: MONID_X402_PAY_TO,
+  maxTimeoutSeconds: 60,
+  extra: {}
+};
+
+async function packageHookReason(requirement: Record<string, unknown>): Promise<string> {
+  const stub = stubFetch(routed({ wash_flagged: false, confidence: "full", ring_evaluated: true }));
+  try {
+    const hook = createTwzrdBeforePaymentHook({ refuseWashFlagged: true, intelTimeoutMs: 200 });
+    const result = (await hook(requirement as never)) as BeforePaymentCreationResult;
+    assert.ok(result && "abort" in result && result.abort, "package hook aborts");
+    assert.equal(stub.calls.length, 0, "refused before any intel call");
+    return result.reason;
+  } finally {
+    stub.restore();
+  }
+}
+
+test("0.11.4: a non-USDC asset on Base is refused twzrd_non_usdc_asset by the package; local policy refuses it first here", async () => {
+  clearPackageEnv();
+  const other = "0x4200000000000000000000000000000000000006";
+  assert.match(await packageHookReason({ ...BASE_REQ, asset: other }), /twzrd_non_usdc_asset/);
+  const stub = stubFetch(routed({ wash_flagged: false, confidence: "full", ring_evaluated: true }));
+  try {
+    const { client, signerCalls } = await gatedClient();
+    await assert.rejects(() => pay(client, NETWORK_BASE, MONID_X402_PAY_TO, { asset: other }), /no_acceptable_offer.*asset:/);
+    assert.equal(signerCalls(), 0);
+    assert.equal(stub.calls.length, 0, "local policy decided; intel never called");
+  } finally {
+    stub.restore();
+  }
+});
+
+test("0.11.4: a malformed amount is refused amount_malformed by the package; local policy refuses it first here", async () => {
+  clearPackageEnv();
+  assert.match(await packageHookReason({ ...BASE_REQ, amount: "1e4" }), /amount_malformed/);
+  const stub = stubFetch(routed({ wash_flagged: false, confidence: "full", ring_evaluated: true }));
+  try {
+    const { client, signerCalls } = await gatedClient();
+    await assert.rejects(() => pay(client, NETWORK_BASE, MONID_X402_PAY_TO, { amount: "1e4" }), /Non-integer amount/);
+    assert.equal(signerCalls(), 0);
+    assert.equal(stub.calls.length, 0, "local policy decided; intel never called");
+  } finally {
+    stub.restore();
+  }
+});
 
 /**
  * twzrd-x402-gate >= 0.9.9 scores Base from its own corpus, so a Base payment

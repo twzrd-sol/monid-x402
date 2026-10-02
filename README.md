@@ -72,11 +72,15 @@ On this pin (0.11.4, measured in `src/twzrd-gate.test.ts`):
   `refuseUnevaluated` (operator decision 2026-10-02); the coverage check
   above still refuses such a card as `twzrd_wash_unknown` when its wash
   coverage is not full.
-- Before intel is called, the hook refuses a non-USDC asset on Base
-  (`twzrd_non_usdc_asset`), a malformed amount (`amount_malformed`), and a
-  402 whose `payTo`/`pay_to` or amount fields disagree
-  (`payto_field_conflict`, `amount_field_conflict`). None of these is an
-  outage, so `TWZRD_FAIL_OPEN` does not apply to them.
+- Before intel is called, the package hook refuses a non-USDC asset on
+  Base (`twzrd_non_usdc_asset`) and a malformed amount (`amount_malformed`);
+  per its changelog it also refuses a 402 whose `payTo`/`pay_to` or amount
+  fields disagree (`payto_field_conflict`, `amount_field_conflict`, not
+  exercised here). None of these is an outage, so `TWZRD_FAIL_OPEN` does
+  not apply. In this client local policy runs first and refuses the same
+  inputs with its own reasons (`no_acceptable_offer ... asset:`,
+  `Non-integer amount`) with zero intel calls, so the package codes are a
+  second layer on this rail.
 - Deadlines: the gate's `intelTimeoutMs` (default 2000 ms,
   `TWZRD_INTEL_TIMEOUT_MS`, passed through from this adapter's env) is the
   deciding deadline. A miss, a 503, a network error, or invalid JSON on
@@ -87,9 +91,12 @@ On this pin (0.11.4, measured in `src/twzrd-gate.test.ts`):
   reads `TWZRD_FAIL_OPEN` with the same `true`/`1` opt-out as the package.
   Both flags are off unless set; the package reads `process.env`, the
   wrapper reads the adapter's `env` option.
-- 0.11.3 reads every boolean flag one way: `true`, `1`, `yes`, `on` in any
-  case are on; anything else is off and a typo warns once. A string
-  `"false"` no longer opens anything.
+- 0.11.3 reads boolean option values and the strict env flags
+  (`TWZRD_REFUSE_UNEVALUATED`, `TWZRD_GATE_ON_CAN_SPEND`) one way: `true`,
+  `1`, `yes`, `on` in any case are on; anything else is off and a typo
+  warns once. A string `"false"` no longer opens anything. The process-env
+  read of `TWZRD_FAIL_OPEN` is stricter: exactly `true` or `1`, and this
+  wrapper matches that.
 
 Lookups we send carry `X-Twzrd-Caller: monid-x402/<version>@0.11.4` and
 `X-TWZRD-Integration: monid-x402/<version>`. This rail is EVM and does
