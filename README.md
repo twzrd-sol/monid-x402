@@ -64,8 +64,9 @@ On this pin (0.11.4, measured in `src/twzrd-gate.test.ts`):
 - `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200 card with
   missing, partial, or stale coverage aborts (`twzrd_wash_unknown`) in
   this client after the package hook allows. `createTwzrdBeforePaymentHook`
-  still does not apply that coverage check (the package applies it on its
-  own paying-fetch path, which this client does not use).
+  still does not apply that coverage check (the package applies it in
+  `createTwzrdWashBeforePaymentHook` and `createTwzrdPayingClient`, which
+  this client does not use).
 - A seller intel has never evaluated is allowed up to the card's own
   `recommended_cap_usdc` and refused above it, when the card has no cap,
   or when the price is unknown (0.11.0 default). This client does not set
