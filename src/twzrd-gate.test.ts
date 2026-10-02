@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { createRequire } from "node:module";
 import { x402Client } from "@x402/fetch";
+import { createTwzrdBeforePaymentHook } from "twzrd-x402-gate";
 import {
   MONID_X402_PAY_TO,
   NETWORK_BASE,
@@ -19,7 +20,9 @@ import {
   twzrdGateAttribution,
   twzrdGateFailOpen,
   twzrdGateTimeoutMs,
+  twzrdIntelTimeoutMs,
   TWZRD_GATE_TIMEOUT_MS,
+  TWZRD_INTEL_TIMEOUT_MS,
   type BeforePaymentCreationResult
 } from "./twzrd-gate.js";
 
@@ -31,12 +34,24 @@ test("gate is on by default; explicit disable wins", () => {
   assert.equal(isTwzrdGateEnabled({ TWZRD_AUTO_GATE: "1", TWZRD_GATE_ENABLED: "off" }), false);
 });
 
-test("wrapper fail-open defaults true; TWZRD_FAIL_OPEN=false refuses hangs", () => {
-  assert.equal(twzrdGateFailOpen({}), true);
+test("wrapper fail-open defaults false; only TWZRD_FAIL_OPEN=true|1 opens (same set as the package)", () => {
+  assert.equal(twzrdGateFailOpen({}), false);
   assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "false" }), false);
+  assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "true" }), true);
+  assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "1" }), true);
+  assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "yes" }), false);
   assert.equal(twzrdGateTimeoutMs({}), TWZRD_GATE_TIMEOUT_MS);
   assert.equal(twzrdGateTimeoutMs({ TWZRD_GATE_TIMEOUT_MS: "50" }), 50);
   assert.equal(twzrdGateTimeoutMs({ TWZRD_GATE_TIMEOUT_MS: "nope" }), TWZRD_GATE_TIMEOUT_MS);
+});
+
+test("gate intelTimeoutMs defaults 2000 and sits under the 5000 wrapper backstop", () => {
+  assert.equal(twzrdIntelTimeoutMs({}), TWZRD_INTEL_TIMEOUT_MS);
+  assert.equal(TWZRD_INTEL_TIMEOUT_MS, 2_000);
+  assert.equal(TWZRD_GATE_TIMEOUT_MS, 5_000);
+  assert.ok(TWZRD_GATE_TIMEOUT_MS > 2 * TWZRD_INTEL_TIMEOUT_MS, "backstop clears two sequential gate calls");
+  assert.equal(twzrdIntelTimeoutMs({ TWZRD_INTEL_TIMEOUT_MS: "30" }), 30);
+  assert.equal(twzrdIntelTimeoutMs({ TWZRD_INTEL_TIMEOUT_MS: "-1" }), TWZRD_INTEL_TIMEOUT_MS);
 });
 
 test("attribution is monid-x402/<version> and caller appends the gate pin", () => {
@@ -171,6 +186,9 @@ const PACKAGE_ENV = [
   "TWZRD_INTEL_BASE",
   "TWZRD_REFUSE_WASH_FLAGGED",
   "TWZRD_FAIL_OPEN",
+  "TWZRD_INTEL_TIMEOUT_MS",
+  "TWZRD_GATE_TIMEOUT_MS",
+  "TWZRD_REFUSE_UNEVALUATED",
   "TWZRD_AUTO_GATE",
   "TWZRD_GATE_ENABLED",
   "TWZRD_UNSUPPORTED_NETWORK_MODE"
@@ -266,7 +284,12 @@ async function gatedClient(
   return { client, signerCalls: () => signerCalls };
 }
 
-function pay(client: x402Client, network: `${string}:${string}`, payTo: string) {
+function pay(
+  client: x402Client,
+  network: `${string}:${string}`,
+  payTo: string,
+  override: { amount?: string; asset?: string } = {}
+) {
   return client.createPaymentPayload({
     x402Version: 2,
     resource: { url: "https://x402.monid.ai/v1/run" },
@@ -274,8 +297,8 @@ function pay(client: x402Client, network: `${string}:${string}`, payTo: string) 
       {
         scheme: "exact",
         network,
-        amount: "10000",
-        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        amount: override.amount ?? "10000",
+        asset: override.asset ?? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
         payTo,
         maxTimeoutSeconds: 60,
         extra: {}
@@ -283,6 +306,66 @@ function pay(client: x402Client, network: `${string}:${string}`, payTo: string) 
     ]
   });
 }
+
+/**
+ * 0.11.1/0.11.2 package refusals that fire before any intel call
+ * (twzrd_non_usdc_asset, amount_malformed). In this client local policy runs
+ * first and refuses the same inputs with its own reasons (asset allowlist,
+ * integer amount), so the package codes are a second layer here. Both layers
+ * are measured: the composed path shows local policy deciding with zero intel
+ * calls; the package hook called directly shows the 0.11.4 code.
+ */
+const BASE_REQ = {
+  scheme: "exact",
+  network: NETWORK_BASE,
+  amount: "10000",
+  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  payTo: MONID_X402_PAY_TO,
+  maxTimeoutSeconds: 60,
+  extra: {}
+};
+
+async function packageHookReason(requirement: Record<string, unknown>): Promise<string> {
+  const stub = stubFetch(routed({ wash_flagged: false, confidence: "full", ring_evaluated: true }));
+  try {
+    const hook = createTwzrdBeforePaymentHook({ refuseWashFlagged: true, intelTimeoutMs: 200 });
+    const result = (await hook(requirement as never)) as BeforePaymentCreationResult;
+    assert.ok(result && "abort" in result && result.abort, "package hook aborts");
+    assert.equal(stub.calls.length, 0, "refused before any intel call");
+    return result.reason;
+  } finally {
+    stub.restore();
+  }
+}
+
+test("0.11.4: a non-USDC asset on Base is refused twzrd_non_usdc_asset by the package; local policy refuses it first here", async () => {
+  clearPackageEnv();
+  const other = "0x4200000000000000000000000000000000000006";
+  assert.match(await packageHookReason({ ...BASE_REQ, asset: other }), /twzrd_non_usdc_asset/);
+  const stub = stubFetch(routed({ wash_flagged: false, confidence: "full", ring_evaluated: true }));
+  try {
+    const { client, signerCalls } = await gatedClient();
+    await assert.rejects(() => pay(client, NETWORK_BASE, MONID_X402_PAY_TO, { asset: other }), /no_acceptable_offer.*asset:/);
+    assert.equal(signerCalls(), 0);
+    assert.equal(stub.calls.length, 0, "local policy decided; intel never called");
+  } finally {
+    stub.restore();
+  }
+});
+
+test("0.11.4: a malformed amount is refused amount_malformed by the package; local policy refuses it first here", async () => {
+  clearPackageEnv();
+  assert.match(await packageHookReason({ ...BASE_REQ, amount: "1e4" }), /amount_malformed/);
+  const stub = stubFetch(routed({ wash_flagged: false, confidence: "full", ring_evaluated: true }));
+  try {
+    const { client, signerCalls } = await gatedClient();
+    await assert.rejects(() => pay(client, NETWORK_BASE, MONID_X402_PAY_TO, { amount: "1e4" }), /Non-integer amount/);
+    assert.equal(signerCalls(), 0);
+    assert.equal(stub.calls.length, 0, "local policy decided; intel never called");
+  } finally {
+    stub.restore();
+  }
+});
 
 /**
  * twzrd-x402-gate >= 0.9.9 scores Base from its own corpus, so a Base payment
@@ -478,13 +561,58 @@ test("outer timeout with TWZRD_FAIL_OPEN=false aborts; signer 0", async () => {
   }
 });
 
-test("outer timeout with default config allows", async () => {
+test("outer timeout with default config refuses (wrapper is fail-closed by default)", async () => {
   clearPackageEnv();
   const stub = stubFetch(() => new Promise<Response>(() => {}));
   try {
     const { client, signerCalls } = await gatedClient({ TWZRD_GATE_TIMEOUT_MS: "25" });
+    await assert.rejects(() => pay(client, NETWORK_BASE, MONID_X402_PAY_TO), /did not answer|Payment creation aborted/);
+    assert.equal(signerCalls(), 0);
+  } finally {
+    stub.restore();
+  }
+});
+
+test("outer timeout with TWZRD_FAIL_OPEN=true in the adapter env allows (explicit opt-out)", async () => {
+  clearPackageEnv();
+  const stub = stubFetch(() => new Promise<Response>(() => {}));
+  try {
+    const { client, signerCalls } = await gatedClient({
+      TWZRD_FAIL_OPEN: "true",
+      TWZRD_GATE_TIMEOUT_MS: "25"
+    });
     await pay(client, NETWORK_BASE, MONID_X402_PAY_TO);
     assert.equal(signerCalls(), 1);
+  } finally {
+    stub.restore();
+  }
+});
+
+/**
+ * Decision B (2026-10-02): the gate's intelTimeoutMs is the deciding deadline.
+ * With intel hung and the wrapper left at its 5000 ms default, the gate's own
+ * deadline fires first and refuses twzrd_fail_closed; the wrapper's
+ * "did not answer" reason never appears and the signer is not invoked. The
+ * elapsed bound proves the adapter env reached the hook (a lost passthrough
+ * would still refuse, but only after the package's 2000 ms default).
+ */
+test("intel hangs: gate intelTimeoutMs refuses twzrd_fail_closed before the wrapper backstop; signer 0", async () => {
+  clearPackageEnv();
+  const stub = stubFetch(() => new Promise<Response>(() => {}));
+  try {
+    const { client, signerCalls } = await gatedClient({ TWZRD_INTEL_TIMEOUT_MS: "25" });
+    const started = Date.now();
+    await assert.rejects(
+      () => pay(client, NETWORK_BASE, MONID_X402_PAY_TO),
+      (err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        assert.match(msg, /twzrd_fail_closed/);
+        assert.doesNotMatch(msg, /did not answer/);
+        return true;
+      }
+    );
+    assert.ok(Date.now() - started < 1_000, "the 25ms gate deadline decided, not a 2000ms default");
+    assert.equal(signerCalls(), 0, "nothing is signed when intel hangs");
   } finally {
     stub.restore();
   }

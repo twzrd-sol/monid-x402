@@ -63,14 +63,17 @@ After `monid inspect` and **before** any client constructs a signer:
    Coverage (`wash_confidence` / `confidence`, `ring_evaluated`, `wash_stale`)
    lives in this adapter — there is no upstream twin. Pin the version that
    produced the receipt you will show: this listen and its settled packet
-   were captured against `0.9.5`; the current `monid-x402` main pins `0.9.10`
-   (Base is evaluated inside the package). Do not mix them in one judged trace.
-   Local policy
-   still runs first (amount cap, network, resource). Do not resolve
-   `twzrd-x402-gate` as `^0.10` — `0.10.1` outranks `0.9.10` by semver and
-   is eight days older.
+   were captured against `0.9.5`; the current `monid-x402` main pins `0.11.4`
+   exactly (Base is evaluated inside the package; non-USDC assets, malformed
+   amounts and conflicting payTo/amount fields are refused before intel).
+   Do not mix them in one judged trace. Local policy
+   still runs first (amount cap, network, resource). Pin an exact version,
+   never a range: below 1.0 a caret can move the refusal policy.
 4. **Refuse without a signer** when:
-   - the subject has never been evaluated
+   - the subject has never been evaluated and the quote is above the card's
+     `recommended_cap_usdc` (0.11.x allows an unevaluated seller at or under
+     that cap; this adapter does not set `refuseUnevaluated`, and its own
+     coverage check still refuses a card whose wash coverage is not full)
    - `wash_flagged` is true
    - the quote is over **either** cap, which are two different numbers:
      - your local policy cap. `defaultPolicy` in this repo is
@@ -81,9 +84,11 @@ After `monid inspect` and **before** any client constructs a signer:
        seller, not a constant: measured on the Monid `payTo` it returns
        `min(quote, $1.00)`, so $1.00 is that seller's ceiling, while a
        never-evaluated seller comes back at $0.10.
-   - intel is fail-closed and the lookup 503s / times out
-     (`TWZRD_FAIL_OPEN=false` is process env on the **package**, not the
-     adapter option of the same name)
+   - intel is fail-closed and the lookup 503s / times out. The package's
+     `intelTimeoutMs` (2000 ms default) is the deciding deadline; the
+     adapter wrapper is a 5000 ms backstop. Both are fail-closed unless
+     `TWZRD_FAIL_OPEN=true|1` is set: the package reads **process** env,
+     the adapter reads its own `env` option.
 5. **Allow** only then. Construct the wallet. Send `--confirm-spend` (or
    `X-TWZRD-Confirm-Spend`) after a refuse packet for that seat is already on
    disk. Minimum advertised price is $0.01 USDC.
@@ -144,9 +149,9 @@ monid inspect -p context.dev -e /web/scrape/markdown
     is the seat. Confirm-spend without it is a skip, not a pay.
 15. **Empty `accepts[]` is not free.** SIWX retrieve is identity. Unsigned
     GET stays `siwx_no_pay_offer`.
-16. **A dead intel lookup is a refuse under fail-closed.** Do not set
-    `TWZRD_FAIL_OPEN` on the adapter and believe the package heard you.
-    The package reads `process.env.TWZRD_FAIL_OPEN`.
+16. **A dead intel lookup is a refuse.** Both layers are fail-closed by
+    default. Do not set `TWZRD_FAIL_OPEN=true` on the adapter and believe
+    the package heard you: the package reads `process.env.TWZRD_FAIL_OPEN`.
 17. **Prepaid `monid run` and x402 `POST /v1/run` are different rails.**
     Do not debit workspace credits to prove an x402 demo. Do not point
     `MONID_API_BASE_URL` at a film that forwards `api.monid.ai/v1/run`.

@@ -1,20 +1,30 @@
 /**
  * TWZRD wash seat on this paying client, after local policy.
  *
- * Published twzrd-x402-gate@0.9.10. This rail is EVM only (Base / Monad).
+ * Published twzrd-x402-gate@0.11.4. This rail is EVM only (Base / Monad).
  * createTwzrdBeforePaymentHook evaluates scored Base payTo values through
- * the package preflight path and aborts wash_flagged. It does not refuse
- * a returned card whose coverage is missing, partial, or stale. That
+ * the package preflight path, refuses a non-USDC asset
+ * (twzrd_non_usdc_asset), a malformed amount (amount_malformed), and
+ * conflicting payTo/pay_to or amount fields, and aborts wash_flagged.
+ * A seller intel has never evaluated is allowed up to the card's own
+ * recommended_cap_usdc (0.11.0 default; refuseUnevaluated is left unset
+ * by operator decision 2026-10-02). The hook does not refuse a returned
+ * card whose coverage is missing, partial, or stale. That
  * twzrd_wash_unknown check is this client, after a package allow.
- * Scored Base lookup failures fail closed unless the package process
- * explicitly sets TWZRD_FAIL_OPEN=true.
  *
- * 0.9.10 stamps wash GETs when attribution is passed. We wrap fetch so
- * intel lookups also carry X-Twzrd-Caller monid-x402/<version>@0.9.10,
- * X-TWZRD-Integration monid-x402/<version>, and X-TWZRD-Run-Id.
+ * Deadlines. The gate owns the deciding deadline: intelTimeoutMs (default
+ * 2000 ms, TWZRD_INTEL_TIMEOUT_MS) bounds each intel call and a miss is an
+ * outage the gate decides fail-closed (twzrd_fail_closed) unless the
+ * process sets TWZRD_FAIL_OPEN=true|1. Our wrapper is a backstop at
+ * TWZRD_GATE_TIMEOUT_MS (default 5000 ms, above two sequential 2000 ms
+ * gate calls) so it never races the gate; it is also fail-closed by
+ * default and reads TWZRD_FAIL_OPEN with the same default.
+ *
+ * We wrap fetch so intel lookups also carry X-Twzrd-Caller
+ * monid-x402/<version>@0.11.4, X-TWZRD-Integration monid-x402/<version>,
+ * and X-TWZRD-Run-Id.
  *
  * Default on. TWZRD_AUTO_GATE=0 or TWZRD_GATE_ENABLED=false disables.
- * Our 2s wrapper fail-opens on hang unless TWZRD_FAIL_OPEN=false.
  */
 
 import { randomUUID } from "node:crypto";
@@ -25,7 +35,11 @@ import type { PaymentRequired, Policy } from "./types.js";
 
 const TRUTHY_OFF = new Set(["0", "false", "no", "off"]);
 
-export const TWZRD_GATE_TIMEOUT_MS = 2_000;
+/** Wrapper backstop. Must stay above the gate's own intelTimeoutMs. */
+export const TWZRD_GATE_TIMEOUT_MS = 5_000;
+/** Gate deadline per intel call, passed through as intelTimeoutMs. */
+export const TWZRD_INTEL_TIMEOUT_MS = 2_000;
+const TRUTHY_ON = new Set(["1", "true"]);
 export const INTEL_BASE_DEFAULT = "https://intel.twzrd.xyz";
 
 export type BeforePaymentCreationResult = void | { abort: true; reason: string };
@@ -89,17 +103,31 @@ export function isTwzrdGateEnabled(env: NodeJS.ProcessEnv = process.env): boolea
   return true;
 }
 
-/** Default true. TWZRD_FAIL_OPEN=false only covers our wrapper hang/throw. */
+/**
+ * Default false (fail-closed), the same default the gate package applies to
+ * its own TWZRD_FAIL_OPEN read. Only an explicit true or 1 opens, which is the
+ * exact set the package accepts from the process env. Covers our wrapper
+ * backstop hang/throw only; the gate decides its own outages.
+ */
 export function twzrdGateFailOpen(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = normalizeFlag(env.TWZRD_FAIL_OPEN);
-  return !(raw !== undefined && TRUTHY_OFF.has(raw));
+  return raw !== undefined && TRUTHY_ON.has(raw);
 }
 
-export function twzrdGateTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = normalizeFlag(env.TWZRD_GATE_TIMEOUT_MS);
-  if (raw === undefined) return TWZRD_GATE_TIMEOUT_MS;
+function positiveMs(raw: string | undefined, fallback: number): number {
+  if (raw === undefined) return fallback;
   const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : TWZRD_GATE_TIMEOUT_MS;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/** Wrapper backstop (TWZRD_GATE_TIMEOUT_MS). */
+export function twzrdGateTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  return positiveMs(normalizeFlag(env.TWZRD_GATE_TIMEOUT_MS), TWZRD_GATE_TIMEOUT_MS);
+}
+
+/** Gate deadline per intel call (TWZRD_INTEL_TIMEOUT_MS), handed to the hook. */
+export function twzrdIntelTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  return positiveMs(normalizeFlag(env.TWZRD_INTEL_TIMEOUT_MS), TWZRD_INTEL_TIMEOUT_MS);
 }
 
 export function twzrdGateAttribution(
@@ -250,7 +278,7 @@ function decideOnGateFailure(
     log.warn(`[monid-x402] ${reason} — proceeding. Local policy still applied.`);
     return undefined;
   }
-  log.warn(`[monid-x402] ${reason} — refusing (TWZRD_FAIL_OPEN=false).`);
+  log.warn(`[monid-x402] ${reason} - refusing (fail-closed; TWZRD_FAIL_OPEN=true opts out).`);
   return { abort: true, reason };
 }
 
@@ -268,6 +296,7 @@ export function composeBeforePaymentCreation(
   const local = createBeforePaymentCreationHook(policy);
   const attr = twzrdGateAttribution(env, options?.runId);
   const timeoutMs = twzrdGateTimeoutMs(env);
+  const intelTimeoutMs = twzrdIntelTimeoutMs(env);
   const failOpen = twzrdGateFailOpen(env);
   const intelBase = (env.TWZRD_INTEL_BASE ?? INTEL_BASE_DEFAULT).replace(/\/+$/, "");
   const seen: { current?: WashSighting } = {};
@@ -275,6 +304,7 @@ export function composeBeforePaymentCreation(
     ? options.createHook()
     : createTwzrdBeforePaymentHook({
         refuseWashFlagged: true,
+        intelTimeoutMs,
         unsupportedNetworkMode: "observe",
         attribution: { integration: attr.integration, runId: attr.runId },
         fetch: attributedIntelFetch(attr, intelBase, (next) => {
