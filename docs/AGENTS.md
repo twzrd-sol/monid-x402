@@ -1,7 +1,7 @@
 # Lane contract
 
 Work in a `monid-x402` worktree. Do not edit the `tool-audit` checkout.
-Do not edit wzrd-final serve trees. Do not invent or commit a key.
+Do not edit the intel service's serve trees. Do not invent or commit a key.
 Spend only with `--confirm-spend` after a refuse packet is on disk.
 
 Solo build is allowed. Keep the write-scope table so two agents do not
