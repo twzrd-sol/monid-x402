@@ -19,7 +19,9 @@ import {
   twzrdGateAttribution,
   twzrdGateFailOpen,
   twzrdGateTimeoutMs,
+  twzrdIntelTimeoutMs,
   TWZRD_GATE_TIMEOUT_MS,
+  TWZRD_INTEL_TIMEOUT_MS,
   type BeforePaymentCreationResult
 } from "./twzrd-gate.js";
 
@@ -31,12 +33,24 @@ test("gate is on by default; explicit disable wins", () => {
   assert.equal(isTwzrdGateEnabled({ TWZRD_AUTO_GATE: "1", TWZRD_GATE_ENABLED: "off" }), false);
 });
 
-test("wrapper fail-open defaults true; TWZRD_FAIL_OPEN=false refuses hangs", () => {
-  assert.equal(twzrdGateFailOpen({}), true);
+test("wrapper fail-open defaults false; only TWZRD_FAIL_OPEN=true|1 opens (same set as the package)", () => {
+  assert.equal(twzrdGateFailOpen({}), false);
   assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "false" }), false);
+  assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "true" }), true);
+  assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "1" }), true);
+  assert.equal(twzrdGateFailOpen({ TWZRD_FAIL_OPEN: "yes" }), false);
   assert.equal(twzrdGateTimeoutMs({}), TWZRD_GATE_TIMEOUT_MS);
   assert.equal(twzrdGateTimeoutMs({ TWZRD_GATE_TIMEOUT_MS: "50" }), 50);
   assert.equal(twzrdGateTimeoutMs({ TWZRD_GATE_TIMEOUT_MS: "nope" }), TWZRD_GATE_TIMEOUT_MS);
+});
+
+test("gate intelTimeoutMs defaults 2000 and sits under the 5000 wrapper backstop", () => {
+  assert.equal(twzrdIntelTimeoutMs({}), TWZRD_INTEL_TIMEOUT_MS);
+  assert.equal(TWZRD_INTEL_TIMEOUT_MS, 2_000);
+  assert.equal(TWZRD_GATE_TIMEOUT_MS, 5_000);
+  assert.ok(TWZRD_GATE_TIMEOUT_MS > 2 * TWZRD_INTEL_TIMEOUT_MS, "backstop clears two sequential gate calls");
+  assert.equal(twzrdIntelTimeoutMs({ TWZRD_INTEL_TIMEOUT_MS: "30" }), 30);
+  assert.equal(twzrdIntelTimeoutMs({ TWZRD_INTEL_TIMEOUT_MS: "-1" }), TWZRD_INTEL_TIMEOUT_MS);
 });
 
 test("attribution is monid-x402/<version> and caller appends the gate pin", () => {
@@ -171,6 +185,9 @@ const PACKAGE_ENV = [
   "TWZRD_INTEL_BASE",
   "TWZRD_REFUSE_WASH_FLAGGED",
   "TWZRD_FAIL_OPEN",
+  "TWZRD_INTEL_TIMEOUT_MS",
+  "TWZRD_GATE_TIMEOUT_MS",
+  "TWZRD_REFUSE_UNEVALUATED",
   "TWZRD_AUTO_GATE",
   "TWZRD_GATE_ENABLED",
   "TWZRD_UNSUPPORTED_NETWORK_MODE"
@@ -478,13 +495,58 @@ test("outer timeout with TWZRD_FAIL_OPEN=false aborts; signer 0", async () => {
   }
 });
 
-test("outer timeout with default config allows", async () => {
+test("outer timeout with default config refuses (wrapper is fail-closed by default)", async () => {
   clearPackageEnv();
   const stub = stubFetch(() => new Promise<Response>(() => {}));
   try {
     const { client, signerCalls } = await gatedClient({ TWZRD_GATE_TIMEOUT_MS: "25" });
+    await assert.rejects(() => pay(client, NETWORK_BASE, MONID_X402_PAY_TO), /did not answer|Payment creation aborted/);
+    assert.equal(signerCalls(), 0);
+  } finally {
+    stub.restore();
+  }
+});
+
+test("outer timeout with TWZRD_FAIL_OPEN=true in the adapter env allows (explicit opt-out)", async () => {
+  clearPackageEnv();
+  const stub = stubFetch(() => new Promise<Response>(() => {}));
+  try {
+    const { client, signerCalls } = await gatedClient({
+      TWZRD_FAIL_OPEN: "true",
+      TWZRD_GATE_TIMEOUT_MS: "25"
+    });
     await pay(client, NETWORK_BASE, MONID_X402_PAY_TO);
     assert.equal(signerCalls(), 1);
+  } finally {
+    stub.restore();
+  }
+});
+
+/**
+ * Decision B (2026-10-02): the gate's intelTimeoutMs is the deciding deadline.
+ * With intel hung and the wrapper left at its 5000 ms default, the gate's own
+ * deadline fires first and refuses twzrd_fail_closed; the wrapper's
+ * "did not answer" reason never appears and the signer is not invoked. The
+ * elapsed bound proves the adapter env reached the hook (a lost passthrough
+ * would still refuse, but only after the package's 2000 ms default).
+ */
+test("intel hangs: gate intelTimeoutMs refuses twzrd_fail_closed before the wrapper backstop; signer 0", async () => {
+  clearPackageEnv();
+  const stub = stubFetch(() => new Promise<Response>(() => {}));
+  try {
+    const { client, signerCalls } = await gatedClient({ TWZRD_INTEL_TIMEOUT_MS: "25" });
+    const started = Date.now();
+    await assert.rejects(
+      () => pay(client, NETWORK_BASE, MONID_X402_PAY_TO),
+      (err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        assert.match(msg, /twzrd_fail_closed/);
+        assert.doesNotMatch(msg, /did not answer/);
+        return true;
+      }
+    );
+    assert.ok(Date.now() - started < 1_000, "the 25ms gate deadline decided, not a 2000ms default");
+    assert.equal(signerCalls(), 0, "nothing is signed when intel hangs");
   } finally {
     stub.restore();
   }

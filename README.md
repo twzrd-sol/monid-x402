@@ -54,19 +54,44 @@ npm run quote:live
 Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
 `@x402/fetch` + `ExactEvmScheme`. Local policy still runs on the 402
 *before* the signer is constructed, and again first on
-`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.9.10`
+`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.11.4`
 evaluates Base through the full preflight path and enforces the seller's
 recommended cap before signing. The adapter also checks merchant-card wash
 coverage before the signer exists.
 
-On this pin: `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200
-card with missing, partial, or stale coverage aborts
-(`twzrd_wash_unknown`) in this client after the package hook allows.
-`createTwzrdBeforePaymentHook` in 0.9.10 does not apply that coverage
-check. On scored Base, fast lookup failures (503, network, invalid JSON)
-fail closed by default; set the package's `TWZRD_FAIL_OPEN=true` only
-when that availability tradeoff is intentional. Lookups we send carry
-`X-Twzrd-Caller: monid-x402/<version>@0.9.10` and
+On this pin (0.11.4, measured in `src/twzrd-gate.test.ts`):
+
+- `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200 card with
+  missing, partial, or stale coverage aborts (`twzrd_wash_unknown`) in
+  this client after the package hook allows. `createTwzrdBeforePaymentHook`
+  still does not apply that coverage check (the package's separate
+  `./wash-default` seat does; this client does not use it).
+- A seller intel has never evaluated is allowed up to the card's own
+  `recommended_cap_usdc` and refused above it, when the card has no cap,
+  or when the price is unknown (0.11.0 default). This client does not set
+  `refuseUnevaluated` (operator decision 2026-10-02); the coverage check
+  above still refuses such a card as `twzrd_wash_unknown` when its wash
+  coverage is not full.
+- Before intel is called, the hook refuses a non-USDC asset on Base
+  (`twzrd_non_usdc_asset`), a malformed amount (`amount_malformed`), and a
+  402 whose `payTo`/`pay_to` or amount fields disagree
+  (`payto_field_conflict`, `amount_field_conflict`). None of these is an
+  outage, so `TWZRD_FAIL_OPEN` does not apply to them.
+- Deadlines: the gate's `intelTimeoutMs` (default 2000 ms,
+  `TWZRD_INTEL_TIMEOUT_MS`, passed through from this adapter's env) is the
+  deciding deadline. A miss, a 503, a network error, or invalid JSON on
+  scored Base is an outage the gate refuses (`twzrd_fail_closed`) unless the
+  package process sets `TWZRD_FAIL_OPEN=true`. This client's own wrapper is
+  a backstop at 5000 ms (`TWZRD_GATE_TIMEOUT_MS`), above two sequential gate
+  calls, so it never races the gate; it is also fail-closed by default and
+  reads `TWZRD_FAIL_OPEN` with the same `true`/`1` opt-out as the package.
+  Both flags are off unless set; the package reads `process.env`, the
+  wrapper reads the adapter's `env` option.
+- 0.11.3 reads every boolean flag one way: `true`, `1`, `yes`, `on` in any
+  case are on; anything else is off and a typo warns once. A string
+  `"false"` no longer opens anything.
+
+Lookups we send carry `X-Twzrd-Caller: monid-x402/<version>@0.11.4` and
 `X-TWZRD-Integration: monid-x402/<version>`. This rail is EVM and does
 not register Solana.
 
@@ -106,7 +131,7 @@ export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
 `GET /health` reports the bound port, `prepaid_run: false`, and
-`twzrd_gate: "0.9.10"`. `GET /` is the operate desk. Spend confirm on
+`twzrd_gate: "0.11.4"`. `GET /` is the operate desk. Spend confirm on
 listen is still 403. There is no USDC wallet on that door. `GET /v1/runs/:id`
 can sign SIWX when `MONID_LISTEN_PRIVATE_KEY` is set and
 `X-TWZRD-Confirm-Sign` (or confirm-spend) is sent. That signature is
