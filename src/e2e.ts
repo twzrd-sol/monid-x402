@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { TWZRD_GATE_PIN } from "./constants.js";
+import { DEFAULT_PROBE_INPUT, TWZRD_GATE_PIN } from "./constants.js";
 import { assertNotStaleFilm, defaultListenBase } from "./listen-decision.js";
 import { PRODUCT_CATALOG_SCHEMA, PRODUCT_SKU } from "./product.js";
 import { assertRunId } from "./retrieve.js";
@@ -80,7 +80,7 @@ export async function proveListenE2E(options: {
   const runBody = {
     provider: "context.dev",
     endpoint: "/web/scrape/markdown",
-    input: {}
+    input: DEFAULT_PROBE_INPUT
   };
 
   const health = await readJson(fetchImpl, `${listen}/health`);

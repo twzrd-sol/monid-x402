@@ -54,12 +54,12 @@ npm run quote:live
 Pay is assembled behind `--confirm-spend` + `PRIVATE_KEY` using
 `@x402/fetch` + `ExactEvmScheme`. Local policy still runs on the 402
 *before* the signer is constructed, and again first on
-`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.11.4`
+`onBeforePaymentCreation`. After that, pinned `twzrd-x402-gate@0.11.5`
 evaluates Base through the full preflight path and enforces the seller's
 recommended cap before signing. The adapter also checks merchant-card wash
 coverage before the signer exists.
 
-On this pin (0.11.4, measured in `src/twzrd-gate.test.ts`):
+On this pin (0.11.5, measured in `src/twzrd-gate.test.ts`):
 
 - `wash_flagged=true` aborts (`twzrd_wash_flagged`). A 200 card with
   missing, partial, or stale coverage aborts (`twzrd_wash_unknown`) in
@@ -99,7 +99,7 @@ On this pin (0.11.4, measured in `src/twzrd-gate.test.ts`):
   read of `TWZRD_FAIL_OPEN` is stricter: exactly `true` or `1`, and this
   wrapper matches that.
 
-Lookups we send carry `X-Twzrd-Caller: monid-x402/<version>@0.11.4` and
+Lookups we send carry `X-Twzrd-Caller: monid-x402/<version>@0.11.5` and
 `X-TWZRD-Integration: monid-x402/<version>`. This rail is EVM and does
 not register Solana.
 
@@ -139,7 +139,7 @@ export MONID_API_BASE_URL=http://127.0.0.1:8788
 ```
 
 `GET /health` reports the bound port, `prepaid_run: false`, and
-`twzrd_gate: "0.11.4"`. `GET /` is the operate desk. Spend confirm on
+`twzrd_gate: "0.11.5"`. `GET /` is the operate desk. Spend confirm on
 listen is still 403. There is no USDC wallet on that door. `GET /v1/runs/:id`
 can sign SIWX when `MONID_LISTEN_PRIVATE_KEY` is set and
 `X-TWZRD-Confirm-Sign` (or confirm-spend) is sent. That signature is

@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MONID_X402_PAY_TO, NETWORK_BASE, NETWORK_MONAD } from "./constants.js";
+import { DEFAULT_PROBE_INPUT, MONID_X402_PAY_TO, NETWORK_BASE, NETWORK_MONAD } from "./constants.js";
 import {
   listLedgerPacketNames,
   packetSettled,
@@ -132,7 +132,7 @@ export async function gradeDefaultPath(root: string): Promise<VerifyReport> {
     live_402: {
       method: "POST",
       url: "https://x402.monid.ai/v1/run",
-      body: { provider: "context.dev", endpoint: "/web/scrape/markdown", input: {} },
+      body: { provider: "context.dev", endpoint: "/web/scrape/markdown", input: DEFAULT_PROBE_INPUT },
       http_status: probe.status,
       resource: probe.paymentRequired.resource.url,
       payTo,

@@ -157,6 +157,18 @@
       "capturedAt": "2026-09-15T19:40:40.680Z"
     },
     {
+      "name": "2026-10-10T055523454Z-refuse.json",
+      "decision": "refuse",
+      "schema": "twzrd.gate_eval_refuse.v1",
+      "signer_invocation_count": 0,
+      "usdc_spent": 0,
+      "http_status": null,
+      "settled": false,
+      "provider": "context.dev",
+      "endpoint": "/web/scrape/markdown",
+      "capturedAt": "2026-10-10T05:55:23.454Z"
+    },
+    {
       "name": "20260912T031545Z-refuse-0001.json",
       "decision": "refuse",
       "schema": "twzrd.gate_eval_refuse.v1",
@@ -530,7 +542,7 @@
     }
   ],
   "totals": {
-    "refuse": 16,
+    "refuse": 17,
     "paid": 5,
     "paid_settled": 5,
     "mislabeled_paid": 0,

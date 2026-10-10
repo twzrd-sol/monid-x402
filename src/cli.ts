@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { companyBriefPlan } from "./brief.js";
 import { runVendorPrescreen } from "./product.js";
 import { crawlSeeds, loadSeeds, writeMatrix } from "./catalog.js";
-import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
+import { DEFAULT_ENDPOINT, DEFAULT_PROBE_INPUT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
 import { decidePayPath, type WashCoverage } from "./decision.js";
 import { doctor } from "./doctor.js";
 import { checkMatrix, loadMatrix, writeDriftReport } from "./drift.js";
@@ -32,11 +32,11 @@ function flag(name: string): boolean {
   return process.argv.includes(name);
 }
 
-function parseInput(): Record<string, unknown> {
+function parseInput(fallback: Record<string, unknown>): Record<string, unknown> {
   const raw = arg("--input");
   if (!raw) {
     const url = arg("--url");
-    return url ? scrapePayInput(url) : {};
+    return url ? scrapePayInput(url) : fallback;
   }
   const parsed = JSON.parse(raw) as unknown;
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -45,11 +45,11 @@ function parseInput(): Record<string, unknown> {
   return parsed as Record<string, unknown>;
 }
 
-function targetFromArgs() {
+function targetFromArgs(fallbackInput: Record<string, unknown> = DEFAULT_PROBE_INPUT) {
   return defaultTarget({
     provider: arg("--provider", DEFAULT_PROVIDER)!,
     endpoint: arg("--endpoint", DEFAULT_ENDPOINT)!,
-    input: parseInput()
+    input: parseInput(fallbackInput)
   });
 }
 
@@ -142,7 +142,8 @@ async function pay() {
       "Pay is gated. Refuse is the default. Re-run with --confirm-spend and a key after a refuse receipt exists."
     );
   }
-  const target = targetFromArgs();
+  // Pay never defaults its purchase: without --url or --input it sends {}, which Monid rejects before quoting.
+  const target = targetFromArgs({});
   requireRefuseOnDisk("evidence/ledger", target);
   const maxAmountMicro = BigInt(arg("--max-amount-micro", "10000")!);
   const result = await payRun({
