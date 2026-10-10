@@ -1,4 +1,4 @@
-import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
+import { DEFAULT_ENDPOINT, DEFAULT_PROBE_INPUT, DEFAULT_PROVIDER, MONID_X402_RUN_URL } from "./constants.js";
 import {
   decodePaymentRequiredHeader,
   headerFromResponse
@@ -27,7 +27,7 @@ export function defaultTarget(overrides: Partial<RunTarget> = {}): RunTarget {
   return {
     provider: DEFAULT_PROVIDER,
     endpoint: DEFAULT_ENDPOINT,
-    input: {},
+    input: DEFAULT_PROBE_INPUT,
     ...overrides
   };
 }

@@ -1,4 +1,4 @@
-import { DEFAULT_ENDPOINT, DEFAULT_PROVIDER } from "./constants.js";
+import { DEFAULT_ENDPOINT, DEFAULT_PROBE_INPUT, DEFAULT_PROVIDER } from "./constants.js";
 
 export const LISTEN_DECISION_SCHEMA = "monid-x402.listen-decision.v1" as const;
 export const DEFAULT_LISTEN_BASE = "http://127.0.0.1:8788";
@@ -98,7 +98,7 @@ export async function proveListenDecision(
     body: JSON.stringify({
       provider: DEFAULT_PROVIDER,
       endpoint: DEFAULT_ENDPOINT,
-      input: {}
+      input: DEFAULT_PROBE_INPUT
     })
   });
   const body: unknown = await response.json();

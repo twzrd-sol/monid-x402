@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { tempDir } from "./helpers/tmpdir.js";
-import { MONID_API_URL, MONID_X402_RUN_URL, TWZRD_GATE_PIN } from "./constants.js";
+import { DEFAULT_PROBE_INPUT, MONID_API_URL, MONID_X402_RUN_URL, TWZRD_GATE_PIN } from "./constants.js";
 import { handleProxyRequest, PREPAID_RUN_URL, assertNotPrepaid, startProxy } from "./proxy.js";
 
 const fixture = JSON.parse(
@@ -36,7 +36,7 @@ test("proxy /v1/run refuses live 402 under default cap and never names prepaid",
   const result = await handleProxyRequest("POST", "/v1/run", {
     provider: "context.dev",
     endpoint: "/web/scrape/markdown",
-    input: {}
+    input: DEFAULT_PROBE_INPUT
   });
   assert.equal(result.status, 402);
   const body = result.body as { schema?: string; rail?: string; signer_invocation_count?: number; usdc_spent?: number };

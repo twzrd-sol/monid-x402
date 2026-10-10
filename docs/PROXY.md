@@ -44,7 +44,7 @@ port, not a hardcoded 8788.
   "rail": "monid-x402",
   "listen": "8788",
   "prepaid_run": false,
-  "twzrd_gate": "0.11.4",
+  "twzrd_gate": "0.11.5",
   "desk": true,
   "sku": "vendor-prescreen"
 }

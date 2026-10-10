@@ -18,6 +18,8 @@ export const X402_FLOOR_MICRO = 10_000n;
 
 export const DEFAULT_PROVIDER = "context.dev";
 export const DEFAULT_ENDPOINT = "/web/scrape/markdown";
+// Monid validates the scrape input before quoting; an empty input now gets HTTP 400, not 402.
+export const DEFAULT_PROBE_INPUT = { queryParams: { url: "https://example.com" } };
 
 export const REFUSE_SCHEMA = "twzrd.gate_eval_refuse.v1";
 export const SPEND_GATED_SCHEMA = "twzrd.gate_eval_spend_gated.v1";
@@ -27,4 +29,4 @@ export const RETRIEVED_SCHEMA = "twzrd.gate_eval_retrieved.v1";
 export const RAIL = "monid-x402";
 export const PACKAGE_VERSION = "0.1.0";
 export const TWZRD_GATE_PACKAGE = "twzrd-x402-gate";
-export const TWZRD_GATE_PIN = "0.11.4";
+export const TWZRD_GATE_PIN = "0.11.5";
