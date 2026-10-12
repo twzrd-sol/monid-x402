@@ -63,7 +63,7 @@ After `monid inspect` and **before** any client constructs a signer:
    Coverage (`wash_confidence` / `confidence`, `ring_evaluated`, `wash_stale`)
    lives in this adapter — there is no upstream twin. Pin the version that
    produced the receipt you will show: this listen and its settled packet
-   were captured against `0.9.5`; the current `monid-x402` main pins `0.11.5`
+   were captured against `0.9.5`; the current `monid-x402` main pins `0.12.0`
    exactly (Base is evaluated inside the package; non-USDC assets, malformed
    amounts and conflicting payTo/amount fields are refused before intel).
    Do not mix them in one judged trace. Local policy

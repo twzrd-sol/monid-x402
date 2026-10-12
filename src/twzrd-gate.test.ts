@@ -313,7 +313,7 @@ function pay(
  * first and refuses the same inputs with its own reasons (asset allowlist,
  * integer amount), so the package codes are a second layer here. Both layers
  * are measured: the composed path shows local policy deciding with zero intel
- * calls; the package hook called directly shows the 0.11.5 code.
+ * calls; the package hook called directly shows the 0.12.0 code.
  */
 const BASE_REQ = {
   scheme: "exact",
@@ -338,7 +338,7 @@ async function packageHookReason(requirement: Record<string, unknown>): Promise<
   }
 }
 
-test("0.11.5: a non-USDC asset on Base is refused twzrd_non_usdc_asset by the package; local policy refuses it first here", async () => {
+test("0.12.0: a non-USDC asset on Base is refused twzrd_non_usdc_asset by the package; local policy refuses it first here", async () => {
   clearPackageEnv();
   const other = "0x4200000000000000000000000000000000000006";
   assert.match(await packageHookReason({ ...BASE_REQ, asset: other }), /twzrd_non_usdc_asset/);
@@ -353,7 +353,7 @@ test("0.11.5: a non-USDC asset on Base is refused twzrd_non_usdc_asset by the pa
   }
 });
 
-test("0.11.5: a malformed amount is refused amount_malformed by the package; local policy refuses it first here", async () => {
+test("0.12.0: a malformed amount is refused amount_malformed by the package; local policy refuses it first here", async () => {
   clearPackageEnv();
   assert.match(await packageHookReason({ ...BASE_REQ, amount: "1e4" }), /amount_malformed/);
   const stub = stubFetch(routed({ wash_flagged: false, confidence: "full", ring_evaluated: true }));

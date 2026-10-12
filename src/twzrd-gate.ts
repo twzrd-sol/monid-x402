@@ -1,7 +1,7 @@
 /**
  * TWZRD wash seat on this paying client, after local policy.
  *
- * Published twzrd-x402-gate@0.11.5. This rail is EVM only (Base / Monad).
+ * Published twzrd-x402-gate@0.12.0. This rail is EVM only (Base / Monad).
  * createTwzrdBeforePaymentHook evaluates scored Base payTo values through
  * the package preflight path, refuses a non-USDC asset
  * (twzrd_non_usdc_asset), a malformed amount (amount_malformed), and
@@ -21,7 +21,7 @@
  * default and reads TWZRD_FAIL_OPEN with the same default.
  *
  * We wrap fetch so intel lookups also carry X-Twzrd-Caller
- * monid-x402/<version>@0.11.5, X-TWZRD-Integration monid-x402/<version>,
+ * monid-x402/<version>@0.12.0, X-TWZRD-Integration monid-x402/<version>,
  * and X-TWZRD-Run-Id.
  *
  * Default on. TWZRD_AUTO_GATE=0 or TWZRD_GATE_ENABLED=false disables.
